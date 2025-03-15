@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+.bash_history
 
 # next.js
 /.next/
