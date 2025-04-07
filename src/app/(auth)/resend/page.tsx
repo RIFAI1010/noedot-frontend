@@ -1,43 +1,132 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { io } from "socket.io-client";
+import { API_BASE_URL, axiosPublic } from "@/utils/config";
+
+interface ApiError {
+    response?: {
+        data?: {
+            message?: string;
+        };
+    };
+}
 
 export default function ResendVerification() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
+    const [button, setButton] = useState(true);
+    const [invalidError, setInvalidError] = useState("");
+    const [socketToken, setSocketToken] = useState<string | null>(null);
+    const [error, setError] = useState(false);
+
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const token = searchParams.get("socketToken");
+        if (!token) {
+            console.log("Token not found in URL");
+            router.push("/login");
+            return
+        }
+
+        getUserStatus(token);
+        setSocketToken(token);
+        // 
+        const socket = io(API_BASE_URL);
+        socket.on(`USER_VERIFIED_${token}`, async (data) => {
+            if (data.success) {
+                try {
+                    const response = await axiosPublic.post("/auth/login-token", { token });
+                    setError(false);
+                    setMessage(response.data.message);
+                    localStorage.setItem("accessToken", response.data.accessToken);
+                    localStorage.setItem("name", response.data.name);
+                    localStorage.setItem("avatar", response.data.avatar);
+                    router.push("/");
+                } catch (err: unknown) {
+                    const error = err as ApiError;
+                    console.error("Login error:", error);
+                    setError(true);
+                    setMessage("Failed to authenticate user.");
+                }
+            }
+        });
+        return () => {
+            socket.disconnect();
+        };
+        // 
+    }, [searchParams]);
+
+    const getUserStatus = async (token: string) => {
+        try {
+            const response = await axiosPublic.post("/auth/user-status", { token });
+            if (response.data.status === true) {
+                router.push("/login");
+            }
+        } catch (err: unknown) {
+            const error = err as ApiError;
+            console.error("Error fetching user status:", error);
+            setError(true);
+            setButton(false);
+            setInvalidError("Resend Link Invalid. Please register again.");
+        }
+    };
 
     const handleResend = async () => {
         setLoading(true);
+        setError(false);
         setMessage("");
+        if (!socketToken) {
+            setMessage("Invalid request: No token provided.");
+            setError(true);
+            setLoading(false);
+            return;
+        }
 
         try {
-            // Simulasi request ke API backend untuk mengirim ulang email verifikasi
-            await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulasi delay
-            setMessage("Verification link has been resent. Please check your email.");
-        } catch (error) {
-            setMessage("Failed to resend verification link. Please try again later.");
+            const response = await axiosPublic.post("/auth/resend-verification", {
+                resendToken: socketToken,
+            });
+            setError(false);
+            setMessage(response.data.message);
+        } catch (err: unknown) {
+            const error = err as ApiError;
+            // console.error("Login error:", err);
+            setError(true);
+            if (error.response?.data?.message) {
+                setMessage(error.response.data.message);
+            } else {
+                setMessage("An unexpected error occurred.");
+            }
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-800">
-            <div className="w-42 absolute top-20">
-                <img src="/next.svg" alt="Logo" className="w-full dark:invert" />
-            </div>
-            <div className="max-w-md w-full p-6 bg-zinc-900 rounded-lg shadow-lg text-center">
-                <div className="mb-4 pb-4">
-                    <h1 className="text-2xl font-bold mb-2">Resend Verification Link</h1>
-                    <p className="mb-2 text-zinc-400">
-                        Didn't receive the verification email? Click the button below to resend.
-                    </p>
-                    {message && <p className="text-sm text-green-400 absolute">{message}</p>}
+        <div className="max-w-md w-full p-6 bg-zinc-900 rounded-lg shadow-lg text-center">
+            <div className="mb-4">
+                <h1 className="text-2xl font-bold mb-2">{button ? "Verification Link Sent" : "Resend Link Expired"}</h1>
+                <p className="mb-2 text-zinc-300">
+                    {button ? "Didn't receive the verification email? Click the button below to resend." : invalidError}
+                </p>
+                <div className="flex items-center justify-home">
+                    {button && <a href="" className="text-zinc-500 hover:underline">
+                        Cancel?
+                    </a>}
                 </div>
+                {message && <p className={`text-sm ${error ? 'text-red-400' : 'text-green-400'}`}>{message}</p>}
+
+            </div>
+
+            {button &&
                 <button
                     onClick={handleResend}
                     disabled={loading}
-                    className="w-full py-2 px-4 cursor-pointer min-h-[40px] bg-blue-500 hover:bg-blue-600 disabled:bg-zinc-800 rounded-lg transition"
+                    className="w-full py-2 px-4 cursor-pointer min-h-[40px] bg-zinc-600 hover:bg-zinc-500 disabled:bg-zinc-800 rounded-lg transition disabled:cursor-not-allowed"
                 >
                     {loading ? (<div className="flex items-center text-center justify-center gap-2 text-white">
                         <svg
@@ -57,7 +146,7 @@ export default function ResendVerification() {
                         </svg>
                     </div>) : "Resend Verification Link"}
                 </button>
-            </div>
+            }
         </div>
     );
 }

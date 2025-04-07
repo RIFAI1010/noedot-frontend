@@ -1,0 +1,47 @@
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl
+    const isAuthenticated = request.cookies.has('refreshToken');
+
+    // Daftar path yang memerlukan autentikasi
+    const protectedPaths = ['/dashboard', '/profile', '/settings']
+    // Daftar path yang hanya bisa diakses ketika tidak terautentikasi
+    const publicPaths = ['/login', '/register']
+
+    // Cek apakah path saat ini adalah protected path
+    const isProtectedPath = protectedPaths.some(path =>
+        pathname.startsWith(path)
+    )
+
+    // Cek apakah path saat ini adalah public path
+    const isPublicPath = publicPaths.some(path =>
+        pathname.startsWith(path)
+    )
+
+    if (isProtectedPath && !isAuthenticated) {
+        // Redirect ke login jika mencoba akses protected path tanpa auth
+        const url = new URL('/login', request.url)
+        url.searchParams.set('callbackUrl', pathname)
+        return NextResponse.redirect(url)
+    }
+
+    if (isPublicPath && isAuthenticated) {
+        // Redirect ke dashboard jika user sudah login tapi mencoba akses public path
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    return NextResponse.next()
+}
+
+// Konfigurasi path mana saja yang akan diproses middleware
+export const config = {
+    matcher: [
+        '/dashboard/:path*',
+        '/profile/:path*',
+        '/settings/:path*',
+        '/login',
+        '/register'
+    ]
+}

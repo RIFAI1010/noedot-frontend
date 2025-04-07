@@ -1,0 +1,62 @@
+import { RefreshTokenResponse } from '@/types/auth';
+import axios from 'axios';
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3850';
+
+// Buat instance axios dengan konfigurasi default
+export const api = axios.create({
+    baseURL: BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    withCredentials: true, // Penting untuk mengirim cookies
+});
+
+// Interceptor untuk menambahkan access token ke header
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Interceptor untuk handle refresh token
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+
+        // Jika error bukan 401 atau request sudah di-retry, reject
+        if (error.response?.status !== 401 || originalRequest._retry) {
+            return Promise.reject(error);
+        }
+
+        originalRequest._retry = true;
+
+        try {
+            // Coba refresh token
+            const response = await api.post<RefreshTokenResponse>('/auth/refresh');
+            const { accessToken } = response.data;
+
+            // Update token di localStorage
+            localStorage.setItem('accessToken', accessToken);
+
+            // Update header Authorization
+            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+            // Retry request original
+            return api(originalRequest);
+        } catch (refreshError) {
+            // Jika refresh gagal, clear storage dan redirect ke login
+            localStorage.removeItem('accessToken');
+            window.location.href = '/login';
+            return Promise.reject(refreshError);
+        }
+    }
+); 
