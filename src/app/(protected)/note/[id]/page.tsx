@@ -21,15 +21,25 @@ const DocumentPage = () => {
 
     const fetchDocument = async () => {
         try {
-            const response = await axiosInstance.get(`/api/documents/${id}`)
-            setDocument(response.data)
+            const response = await axiosInstance.get(`/note/${id}`)
+            setDocument({ content: response.data.content, title: response.data.title })
         } catch (error) {
             console.error('Error fetching document:', error)
         }
     }
 
+
+    useEffect(() => {
+        const handleNoteSaved = () => {
+            fetchDocument()
+        }
+        window.addEventListener('noteSaved', handleNoteSaved)
+        return () => window.removeEventListener('noteSaved', handleNoteSaved)
+    }, [])
+
+
     // Save document dengan debounce
-    const saveDocument = useCallback(async (content: string) => {
+    const saveDocument = useCallback(async (content: string, title: string) => {
         if (saveTimeout) {
             clearTimeout(saveTimeout)
         }
@@ -37,19 +47,23 @@ const DocumentPage = () => {
         const timeout = setTimeout(async () => {
             setSaving(true)
             try {
-                await axiosInstance.put(`/api/documents/${id}`, {
-                    content,
-                    title: document.title
+                await axiosInstance.put(`/note/${id}/document`, {
+                    content: content,
+                    title: title
                 })
+                // Dispatch event saat note berhasil disimpan
+                window.dispatchEvent(new CustomEvent('noteSaved'))
             } catch (error) {
                 console.error('Error saving document:', error)
             } finally {
                 setSaving(false)
             }
-        }, 1000) // Delay 1 detik
+        }, 500) // Delay 500ms
 
         setSaveTimeout(timeout)
-    }, [id, document.title])
+    }, [id])
+
+    
 
     useEffect(() => {
         return () => {
@@ -67,7 +81,7 @@ const DocumentPage = () => {
                     value={document.title}
                     onChange={(e) => {
                         setDocument(prev => ({ ...prev, title: e.target.value }))
-                        saveDocument(e.target.value)
+                        saveDocument(document.content, e.target.value)
                     }}
                     className="border-none outline-none bg-transparent text-zinc-300 text-2xl font-bold"
                     placeholder="Untitled Document"
@@ -76,10 +90,11 @@ const DocumentPage = () => {
             </div>
 
             <DocumentEditor
+                noteId={id as string}
                 content={document.content}
                 onChange={(newContent) => {
                     setDocument(prev => ({ ...prev, content: newContent }))
-                    saveDocument(newContent)
+                    saveDocument(newContent, document.title)
                 }}
             />
         </div>

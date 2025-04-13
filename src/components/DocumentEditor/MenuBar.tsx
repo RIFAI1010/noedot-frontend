@@ -1,37 +1,69 @@
+import { axiosInstance } from '@/utils/config'
 import { Level } from '@tiptap/extension-heading'
-import { Editor } from '@tiptap/react'
-import { 
-  Bold, 
-  Italic, 
-  Underline, 
-  Strikethrough, 
-  List, 
-  ListOrdered, 
-  AlignLeft, 
-  AlignCenter, 
-  AlignRight, 
-  Undo, 
-  Redo,
-  Code,
-  Quote,
-  Image,
-  Link,
-  Table
+import { Editor, useCurrentEditor } from '@tiptap/react'
+import {
+    Bold,
+    Italic,
+    Underline,
+    Strikethrough,
+    List,
+    ListOrdered,
+    AlignLeft,
+    AlignCenter,
+    AlignRight,
+    Undo,
+    Redo,
+    Code,
+    Quote,
+    Image,
+    Link,
+    Table
 } from 'lucide-react'
 
 interface MenuBarProps {
     editor: Editor
+    noteId: string
 }
 
-const MenuBar = ({ editor }: MenuBarProps) => {
-    if (!editor) {
-        return null
+const MenuBar = ({ noteId, editor }: MenuBarProps) => {
+
+    // const { editor } = useCurrentEditor()
+
+    // if (!editor) {
+    //     return null
+    // }
+
+    const handleInsertTable = async () => {
+        try {
+            const response = await axiosInstance.post('/table', { noteId })
+            const tableId = response.data.id
+            editor.chain().focus().insertContent({
+                type: 'customTable',
+                attrs: {
+                    id: tableId
+                }
+            }).run()
+        } catch (error) {
+            console.error('Error inserting table:', error)
+        }
     }
 
     return (
         <div className="menu-bar flex gap-2 flex-wrap p-2 border-b border-zinc-500">
             {/* Text Formatting */}
             <div className="flex gap-2">
+                <button
+                    onClick={() => {
+                        const id = 'comp_' + Date.now() // generate ID
+                        editor.chain().focus().insertContent({
+                            type: 'customComponent',
+                            attrs: { componentId: id },
+                        }).run()
+                    }}
+                >
+                    Tambahkan Komponen
+                </button>
+
                 <button
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer ${editor.isActive('bold') ? 'bg-zinc-500' : 'bg-zinc-700'}`}
@@ -184,6 +216,19 @@ const MenuBar = ({ editor }: MenuBarProps) => {
 
             <div className="w-[1px] my-1 bg-zinc-500" />
 
+            {/* Table */}
+            <div className="flex gap-2">
+                <button
+                    onClick={() => handleInsertTable()}
+                    className="p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700"
+                    title="Insert Table"
+                >
+                    <Table size={16} />
+                </button>
+            </div>
+
+            <div className="w-[1px] my-1 bg-zinc-500" />
+
             {/* Undo/Redo */}
             <div className="flex gap-2">
                 <button
@@ -202,7 +247,7 @@ const MenuBar = ({ editor }: MenuBarProps) => {
                 </button>
             </div>
             <div className='w-[1px] my-1 bg-zinc-500' />
-            
+
         </div>
     )
 }

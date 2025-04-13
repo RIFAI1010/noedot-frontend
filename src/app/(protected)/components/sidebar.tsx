@@ -86,7 +86,6 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
     const notesContainerRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
-    const [isInitialFetch, setIsInitialFetch] = useState(true);
 
     // Simulasi data user (nanti bisa diganti dengan API call)
     // const mockUsers = [
@@ -104,16 +103,15 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     const [mockUsers, setMockUsers] = useState<User[]>([]);
 
     useEffect(() => {
-        fetchData();
-    }, [pathname, isInitialFetch]);
-    const fetchData = async () => {
+        fetchData(true);
+    }, [pathname]);
+    const fetchData = async (isInitialFetch: boolean = false) => {
         // Hanya fetch jika ini fetch pertama atau pathname berubah
-        if (isInitialFetch || pathname) {
+        if (isInitialFetch) {
             try {
                 if (isInitialFetch) setIsLoading(true);
                 const response = await axiosInstance.get('/note?my=true');
                 setNotes(response.data);
-                if (isInitialFetch) setIsInitialFetch(false);
             } catch (error) {
                 console.log(error);
                 showNotification('Failed to fetch notes', 'error');
@@ -122,6 +120,21 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             }
         }
     };
+    useEffect(() => {
+        fetchData()
+        
+        // Tambahkan event listener untuk noteSaved
+        const handleNoteSaved = () => {
+            fetchData()
+        }
+        
+        window.addEventListener('noteSaved', handleNoteSaved)
+        
+        // Cleanup
+        return () => {
+            window.removeEventListener('noteSaved', handleNoteSaved)
+        }
+    }, [])
 
     useEffect(() => {
         if (!pathname) return;
@@ -307,6 +320,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             });
             setShowNoteModalAction(false);
             await fetchData();
+            window.dispatchEvent(new CustomEvent('noteUpdated'))
             showNotification('Note updated successfully', 'success');
         } catch (error: any) {
             if (error.response?.data?.message) {
