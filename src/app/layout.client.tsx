@@ -37,6 +37,7 @@ function NetworkErrorListener() {
 
   useEffect(() => {
     const handleForbiddenPush = (event: CustomEvent) => {
+      console.log('push by event, message: ', event.detail.message);
       router.push(event.detail.path);
     };
 

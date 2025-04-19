@@ -1,0 +1,98 @@
+    // websocket listener for note title updated
+    // useEffect(() => {
+    //     const socket = io(API_BASE_URL + '/note', {
+    //         auth: {
+    //             token: localStorage.getItem('accessToken') // token JWT dari local storage
+    //         }
+    //     });
+    //     // Bergabung ke room note
+    //     socket.emit('joinNote', { noteId: id });
+    //     // Mendengarkan error
+    //     socket.on('error', (error) => {
+    //         console.error('Error:', error.message);
+    //         router.push('/')
+    //     });
+    //     // Mendengarkan konfirmasi bergabung
+    //     socket.on('joinedNote', (data) => {
+    //         console.log('Berhasil bergabung ke note:', data.noteId);
+    //         setTitle(data.title)
+    //         if (data.status == 'private' && !data.owner) {
+    //             router.push('/')
+    //         }
+    //         if (data.editable === 'access' || data.editable === 'everyone') {
+    //             setEditable(true)
+    //         }
+    //     });
+    // }, [id])
+
+    // useEffect(() => {
+    //     const setupSocket = async () => {
+    //         try {
+    //             await socketManager.connect('/note');
+    //             socketManager.emit('joinNote', { noteId: id }, '/note');
+
+    //             socketManager.on('error', (error) => {
+    //                 console.error('Error:', error.message);
+    //             });
+
+    //             socketManager.on('joinedNote', (data) => {
+    //                 console.log('Berhasil bergabung ke note:', data.noteId);
+    //                 setTitle(data.title);
+    //                 if (data.status == 'private' && !data.owner) {
+    //                     router.push('/');
+    //                 }
+    //                 if (data.editable === 'access' || data.editable === 'everyone') {
+    //                     setEditable(true);
+    //                 }
+    //             });
+    //         } catch (error) {
+    //             console.error('Error setting up socket:', error);
+    //         }
+    //     };
+
+    //     setupSocket();
+
+    //     return () => {
+    //         socketManager.off('error');
+    //         socketManager.off('joinedNote');
+    //         socketManager.disconnect();
+    //     };
+    // }, [id])
+
+    // useEffect(() => {
+    //     const payload = getUserPayload();
+    //     if (payload) {
+    //         const socket = io(API_BASE_URL, {
+    //             auth: {
+    //                 token: localStorage.getItem('accessToken')
+    //             }
+    //         });
+    //         socket.emit('joinNote', { noteId: id });
+    //         socket.on('joinedNote', (data) => {
+    //             console.log('Joined note channel:', data);
+    //         });
+    //         socket.on('error', (err) => {
+    //             console.error('Socket note error:', err);
+    //         });
+    //     }
+    // }, [id])
+
+    // useEffect(() => {
+    //     const setup = async () => {
+    //         const socket = await connectSocket();
+    //         const payload = JSON.parse(atob(localStorage.getItem('accessToken')!.split('.')[1]));
+    //         if (socket) {
+    //             socket.emit('joinNote', { noteId: id });
+
+    //             socket.on('joinedNote', (data) => {
+    //                 console.log('Joined note:', data);
+    //             });
+    //         }
+    //     };
+
+    //     setup();
+
+    //     return () => {
+    //         disconnectSocket('leaveNote');
+    //     };
+    // }, [id]);

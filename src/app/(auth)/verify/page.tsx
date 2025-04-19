@@ -15,7 +15,7 @@ interface ApiError {
 export default function Verification() {
     const [loading, setLoading] = useState(true);
     const [isVerified, setIsVerified] = useState(false);
-    const router = useRouter(); // Jangan deklarasi ulang di dalam verify()
+    const router = useRouter();
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -88,7 +88,7 @@ export default function Verification() {
                 disabled={loading}
                 className="w-full py-2 px-4 cursor-pointer min-h-[40px] bg-zinc-500 hover:bg-zinc-600 disabled:bg-zinc-800 rounded-lg transition"
             >
-                {loading ? (<div className="flex items-center text-center justify-center gap-2 text-white">
+                {!isVerified && loading ? (<div className="flex items-center text-center justify-center gap-2 text-white">
                     <svg
                         aria-hidden="true"
                         className="w-5 h-5 text-gray-200 animate-spin fill-blue-600"
@@ -104,7 +104,7 @@ export default function Verification() {
                             fill="currentFill"
                         />
                     </svg>
-                </div>) : "Log In"}
+                </div>) : (isVerified ? "Log In" : "Back to Login")}
             </button>
         </div>
     );

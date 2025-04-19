@@ -1,6 +1,7 @@
 'use client'
 
 import { axiosInstance } from "@/utils/config";
+import Link from "next/link";
 import { useEffect } from "react";
 
 export default function ProtectedPage() {
@@ -34,6 +35,9 @@ export default function ProtectedPage() {
                 <div className="w-1/4 bg-zinc-800 rounded-lg p-4 hover:bg-zinc-700 transition-all cursor-pointer">
                     <h3 className="text-lg font-semibold mb-2">Total Projek</h3>
                     <p className="text-2xl font-bold">345</p>
+                    <Link href="/home">
+                        home
+                    </Link>
                 </div>
 
                 <button className="absolute right-5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all">

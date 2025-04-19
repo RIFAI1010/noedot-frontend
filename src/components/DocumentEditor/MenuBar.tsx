@@ -49,21 +49,9 @@ const MenuBar = ({ noteId, editor }: MenuBarProps) => {
     }
 
     return (
-        <div className="menu-bar flex gap-2 flex-wrap p-2 border-b border-zinc-500">
+        <div className="menu-bar flex gap-2 flex-wrap p-2 border-b border-zinc-500 bg-zinc-800">
             {/* Text Formatting */}
             <div className="flex gap-2">
-                <button
-                    onClick={() => {
-                        const id = 'comp_' + Date.now() // generate ID
-                        editor.chain().focus().insertContent({
-                            type: 'customComponent',
-                            attrs: { componentId: id },
-                        }).run()
-                    }}
-                >
-                    Tambahkan Komponen
-                </button>
-
                 <button
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer ${editor.isActive('bold') ? 'bg-zinc-500' : 'bg-zinc-700'}`}

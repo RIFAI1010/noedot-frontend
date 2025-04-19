@@ -48,62 +48,62 @@ const DocumentEditor = ({ content, onChange, noteId }: EditorProps) => {
             Image,
             BulletList,
             OrderedList,
-            CustomComponentNode,
-            Node.create({
-                name: 'customTable',
-                group: 'block',
-                atom: true,
-                draggable: true,
-                addAttributes() {
-                    return {
-                        id: {
-                            default: null,
-                        }
-                    }
-                },
-                parseHTML() {
-                    return [{
-                        tag: 'div[id]',
-                    }]
-                },
-                renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
-                    return ['div', HTMLAttributes]
-                },
-                addNodeView() {
-                    return ({ node, HTMLAttributes }: { node: any, HTMLAttributes: any }) => {
-                        const dom = document.createElement('div')
-                        dom.classList.add('custom-table-wrapper')
-                        // dom.setAttribute('draggable', 'false')
-                        // dom.ondragstart = (e) => {
-                        //     e.preventDefault()
-                        //     return false
-                        // }
-                        const tableId = node.attrs.id
-                        const root = document.createElement('div')
-                        root.setAttribute('id', tableId)
-                        root.classList.add('custom-table')
-                        dom.appendChild(root)
+            // CustomComponentNode,
+            // Node.create({
+            //     name: 'customTable',
+            //     group: 'block',
+            //     atom: true,
+            //     draggable: true,
+            //     addAttributes() {
+            //         return {
+            //             id: {
+            //                 default: null,
+            //             }
+            //         }
+            //     },
+            //     parseHTML() {
+            //         return [{
+            //             tag: 'div[id]',
+            //         }]
+            //     },
+            //     renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
+            //         return ['div', HTMLAttributes]
+            //     },
+            //     addNodeView() {
+            //         return ({ node, HTMLAttributes }: { node: any, HTMLAttributes: any }) => {
+            //             const dom = document.createElement('div')
+            //             dom.classList.add('custom-table-wrapper')
+            //             // dom.setAttribute('draggable', 'false')
+            //             // dom.ondragstart = (e) => {
+            //             //     e.preventDefault()
+            //             //     return false
+            //             // }
+            //             const tableId = node.attrs.id
+            //             const root = document.createElement('div')
+            //             root.setAttribute('id', tableId)
+            //             root.classList.add('custom-table')
+            //             dom.appendChild(root)
 
-                        const reactRoot = createRoot(root)
-                        reactRoot.render(<Table id={tableId} noteId={noteId} getEditor={() => editor} />)
+            //             const reactRoot = createRoot(root)
+            //             reactRoot.render(<Table id={tableId} noteId={noteId} getEditor={() => editor} />)
 
-                        return {
-                            dom,
-                            update: (node: any) => {
-                                const newTableId = node.attrs.id
-                                if (newTableId !== tableId) {
-                                    reactRoot.render(<Table id={newTableId} noteId={noteId} getEditor={() => editor} />)
-                                }
-                                return true
-                            },
-                            destroy: () => {
-                                reactRoot.unmount()
-                                console.log("table: destroyed")
-                            }
-                        }
-                    }
-                },
-            })
+            //             return {
+            //                 dom,
+            //                 update: (node: any) => {
+            //                     const newTableId = node.attrs.id
+            //                     if (newTableId !== tableId) {
+            //                         reactRoot.render(<Table id={newTableId} noteId={noteId} getEditor={() => editor} />)
+            //                     }
+            //                     return true
+            //                 },
+            //                 destroy: () => {
+            //                     reactRoot.unmount()
+            //                     console.log("table: destroyed")
+            //                 }
+            //             }
+            //         }
+            //     },
+            // })
         ],
         content: content,
         onUpdate: ({ editor }) => {
@@ -125,27 +125,27 @@ const DocumentEditor = ({ content, onChange, noteId }: EditorProps) => {
         return null
     }
 
-    const extensions = [
-        StarterKit,
-        DraggableItem,
-    ]
+    // const extensions = [
+    //     StarterKit,
+    //     DraggableItem,
+    // ]
 
-    const content2 = `
-        <p>This is a boring paragraph.</p>
-        <div data-type="draggable-item">
-          <p>Followed by a fancy draggable item.</p>
-        </div>
-        <div data-type="draggable-item">
-          <p>And another draggable item.</p>
-          <div data-type="draggable-item">
-            <p>And a nested one.</p>
-            <div data-type="draggable-item">
-              <p>But can we go deeper?</p>
-            </div>
-          </div>
-        </div>
-        <p>Let’s finish with a boring paragraph.</p>
-      `
+    // const content2 = `
+    //     <p>This is a boring paragraph.</p>
+    //     <div data-type="draggable-item">
+    //       <p>Followed by a fancy draggable item.</p>
+    //     </div>
+    //     <div data-type="draggable-item">
+    //       <p>And another draggable item.</p>
+    //       <div data-type="draggable-item">
+    //         <p>And a nested one.</p>
+    //         <div data-type="draggable-item">
+    //           <p>But can we go deeper?</p>
+    //         </div>
+    //       </div>
+    //     </div>
+    //     <p>Let’s finish with a boring paragraph.</p>
+    //   `
 
 
 

@@ -4,6 +4,11 @@ import ProtectedLayout from '@/app/(protected)/components/ProtectedLayout'
 import Sidebar from '@/app/(protected)/components/sidebar'
 import Navbar from '@/app/(protected)/components/Navbar'
 import { useEffect, useState } from 'react'
+import { getUserPayload } from '@/utils/auth'
+import { io } from 'socket.io-client'
+import { API_BASE_URL } from '@/utils/config'
+import { disconnectSocket } from '@/utils/socketClient'
+import { connectSocket } from '@/utils/socketClient'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -35,13 +40,53 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         }
     }, [isMobile])
 
+    
+
+    // useEffect(() => {
+    //     const payload = getUserPayload();
+
+    //     if (payload) {
+    //         console.log('socket layout')
+    //         socketManager.connect('/user');
+    //         socketManager.emit('joinUser', { userId: payload.id }, '/user');
+    //         socketManager.on('error', (error) => {
+    //             console.error('Error:', error.message);
+    //         });
+    //         socketManager.on('joinedUser', (data) => {
+    //             console.log('Berhasil bergabung ke user:', data);
+    //         });
+    //     }
+    // }, [])
+
+    // useEffect(() => {
+    //     const payload = getUserPayload();
+    //     if (payload) {
+    //         console.log('Connecting user socket...');
+
+    //         socketManager.connect('/user');
+    //         socketManager.emit('joinUser', { userId: payload.id }, '/user');
+
+    //         socketManager.on('joinedUser', (data) => {
+    //             console.log('Joined user channel:', data);
+    //         }, '/user');
+
+    //         socketManager.on('error', (err) => {
+    //             console.error('Socket user error:', err);
+    //         }, '/user');
+    //     }
+
+    //     return () => {
+    //         socketManager.disconnect('/user');
+    //     };
+    // }, []);
+
     return (
         <ProtectedLayout>
             <div className="min-h-screen bg-background">
                 {/* Sidebar */}
                 <Navbar sidebarOpen={sidebarOpen} onMenuClick={() => {
                     // if (!closeByOutside) {
-                        setSidebarOpen(!sidebarOpen)
+                    setSidebarOpen(!sidebarOpen)
                     // } else {
                     //     setCloseByOutside(false)
                     // }

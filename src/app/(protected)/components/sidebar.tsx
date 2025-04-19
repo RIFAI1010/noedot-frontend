@@ -6,11 +6,14 @@ import { FaBarsProgress, FaCheck, FaPlus } from "react-icons/fa6";
 import { useState, useRef, useEffect } from "react";
 import { IoSettingsOutline } from "react-icons/io5";
 import Image from "next/image";
-import { axiosInstance } from "@/utils/config";
-import { BsThreeDots, BsXLg, BsX  } from "react-icons/bs";
+import { API_BASE_URL, axiosInstance } from "@/utils/config";
+import { BsThreeDots, BsXLg, BsX } from "react-icons/bs";
 import { IoIosArrowDown } from "react-icons/io";
 import { FaTimes } from "react-icons/fa";
 import { FaTimesCircle } from "react-icons/fa";
+import { io } from "socket.io-client";
+import { disconnectSocket } from "@/utils/socketClient";
+import { connectSocket } from "@/utils/socketClient";
 
 interface SidebarProps {
     open: boolean
@@ -73,7 +76,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     const [noteOwner, setNoteOwner] = useState<boolean>(false);
     const [searchUserQuery, setSearchUserQuery] = useState('');
     const [showUserSearch, setShowUserSearch] = useState(false);
-    const [searchUserResults, setSearchUserResults] = useState<any[]>([]);
+    const [searchUserResults, setSearchUserResults] = useState<User[]>([]);
     const userSearchRef = useRef<HTMLDivElement>(null);
     const searchUserTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -100,6 +103,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
 
     // ];
 
+    // const [mockUsersBefore, setMockUsersBefore] = useState<User[]>([]);
     const [mockUsers, setMockUsers] = useState<User[]>([]);
 
     useEffect(() => {
@@ -107,34 +111,55 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     }, [pathname]);
     const fetchData = async (isInitialFetch: boolean = false) => {
         // Hanya fetch jika ini fetch pertama atau pathname berubah
-        if (isInitialFetch) {
-            try {
-                if (isInitialFetch) setIsLoading(true);
-                const response = await axiosInstance.get('/note?my=true');
-                setNotes(response.data);
-            } catch (error) {
-                console.log(error);
-                showNotification('Failed to fetch notes', 'error');
-            } finally {
-                setIsLoading(false);
-            }
+        // if (isInitialFetch) {
+        try {
+            if (isInitialFetch) setIsLoading(true);
+            const response = await axiosInstance.get('/note?my=false');
+            setNotes(response.data);
+        } catch (error) {
+            console.log(error);
+            showNotification('Failed to fetch notes', 'error');
+        } finally {
+            setIsLoading(false);
         }
+        // }
     };
     useEffect(() => {
         fetchData()
-        
+
         // Tambahkan event listener untuk noteSaved
         const handleNoteSaved = () => {
             fetchData()
         }
-        
+
         window.addEventListener('noteSaved', handleNoteSaved)
-        
+
         // Cleanup
         return () => {
             window.removeEventListener('noteSaved', handleNoteSaved)
         }
     }, [])
+
+    useEffect(() => {
+        const setup = async () => {
+            const socket = await connectSocket();
+            const payload = JSON.parse(atob(localStorage.getItem('accessToken')!.split('.')[1]));
+            if (socket) {
+                socket.emit('joinUser', { userId: payload.id });
+
+                socket.on(`joinedUser_${payload.id}`, (data) => {
+                    console.log('Joined user:', data);
+                    fetchData();
+                });
+            }
+        };
+
+        setup();
+
+        return () => {
+            disconnectSocket();
+        };
+    }, []);
 
     useEffect(() => {
         if (!pathname) return;
@@ -249,6 +274,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
         setNoteOwner(true);
         setSelectedUsers([]);
         setMockUsers([]);
+        // setMockUsersBefore([]);
         setSearchUserResults([]);
         setSearchUserQuery('');
         setShowNoteModalAction(true);
@@ -263,6 +289,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
         try {
             setSelectedUsers([]);
             setMockUsers([]);
+            // setMockUsersBefore([]);
             setSearchUserResults([]);
             setSearchUserQuery('');
             setShowNoteModalAction(true);
@@ -278,6 +305,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             setStatus(response.data.status);
             setTitle(response.data.title);
             setEditable(response.data.editable);
+            // setMockUsersBefore(response.data.noteEdits);
             setMockUsers(response.data.noteEdits);
             setSelectedUsers(response.data.noteEdits.map((user: User) => user.id));
         } catch (error) {
@@ -404,7 +432,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             searchUserTimeoutRef.current = setTimeout(async () => {
                 try {
                     const results = await axiosInstance.get(`/user/search?q=${query}`);
-                    setMockUsers(results.data);
+                    // setMockUsers(mockUsersBefore.concat(results.data));
                     setSearchUserResults(results.data);
                 } catch (error) {
                     console.error('Error searching users:', error);
@@ -419,6 +447,8 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     const handleSelectUser = (userId: string) => {
         if (!selectedUsers.includes(userId)) {
             setSelectedUsers([...selectedUsers, userId]);
+            const newMockUsers = searchUserResults.filter(user => user.id == userId);
+            setMockUsers(mockUsers.concat(newMockUsers));
         }
         setSearchUserQuery('');
         setShowUserSearch(false);
@@ -426,6 +456,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
 
     const handleRemoveUser = (userId: string) => {
         setSelectedUsers(selectedUsers.filter(id => id !== userId));
+        setMockUsers(mockUsers.filter(user => user.id !== userId));
     };
 
     // Cleanup timeout on component unmount
@@ -453,7 +484,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                     <div className={`flex flex-col gap-2 bg-zinc-800 border border-zinc-700 p-2 rounded-lg`}>
                         <div className="flex gap-2 flex-1 items-center justify-start w-full">
                             <div className="w-10 h-10 min-w-10 min-h-10 rounded-full overflow-hidden border-2 border-zinc-700">
-                                {avatar ? (
+                                {avatar !== 'null' ? (
                                     <Image src={avatar} alt="avatar" width={40} height={40} />
                                 ) : (
                                     <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
@@ -526,7 +557,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                                     <div key={note.id} className={`group rounded-md p-2
                                     ${activeNoteOptions === note.id ? (selectedNoteId === note.id ? 'bg-zinc-600' : 'bg-zinc-700') : (selectedNoteId === note.id ? 'bg-zinc-700 hover:bg-zinc-600' : 'hover:bg-zinc-700')}`} onClick={() => router.push(`/note/${note.id}`)}>
                                         <div className="flex items-center justify-between">
-                                            <p className="text-md">{note.title}</p>
+                                            <p className="text-md truncate">{note.title}</p>
                                             <button className="relative">
                                                 <BsThreeDots
                                                     title="Options"
@@ -768,15 +799,15 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                                             })}
                                         </div>
                                         {noteOwner && (
-                                        <input
-                                            type="text"
-                                            disabled={editable === 'me'}
-                                            placeholder="Search users..."
-                                            value={searchUserQuery}
-                                            onChange={(e) => handleSearch(e.target.value)}
-                                            onFocus={() => setShowUserSearch(true)}
-                                            className="w-full px-3 py-2 rounded-lg focus:ring-2 bg-zinc-800 border border-zinc-700 focus:ring-zinc-500 focus:border-zinc-500 focus:bg-zinc-700 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        />
+                                            <input
+                                                type="text"
+                                                disabled={editable === 'me'}
+                                                placeholder="Search users..."
+                                                value={searchUserQuery}
+                                                onChange={(e) => handleSearch(e.target.value)}
+                                                onFocus={() => setShowUserSearch(true)}
+                                                className="w-full px-3 py-2 rounded-lg focus:ring-2 bg-zinc-800 border border-zinc-700 focus:ring-zinc-500 focus:border-zinc-500 focus:bg-zinc-700 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            />
                                         )}
                                         {showUserSearch && searchUserResults.length > 0 && (
                                             <div className="absolute z-50 w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-md shadow-lg max-h-40 overflow-y-auto custom-scrollbar">

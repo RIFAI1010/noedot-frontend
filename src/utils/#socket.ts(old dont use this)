@@ -1,0 +1,129 @@
+import { io, Socket } from 'socket.io-client';
+import { API_BASE_URL } from './config';
+
+class SocketManager {
+    private static instance: SocketManager;
+    private socket: Socket | null = null;
+    private pendingEvents: Array<{ event: string; data: any }> = [];
+    private isRefreshing = false;
+
+    private constructor() {}
+
+    public static getInstance(): SocketManager {
+        if (!SocketManager.instance) {
+            SocketManager.instance = new SocketManager();
+        }
+        return SocketManager.instance;
+    }
+
+    private async refreshToken() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+            
+            if (!response.ok) {
+                throw new Error('Refresh token failed');
+            }
+            
+            const data = await response.json();
+            localStorage.setItem('accessToken', data.accessToken);
+            return data.accessToken;
+        } catch (error) {
+            console.error('Error refreshing token:', error);
+            throw error;
+        }
+    }
+
+    public async connect(namespace: string) {
+        if (this.socket?.connected) return;
+
+        try {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                throw new Error('No access token found');
+            }
+
+            this.socket = io(API_BASE_URL + namespace, {
+                transports: ['websocket'],
+                auth: {
+                    token
+                },
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+            });
+
+            this.socket.on('connect_error', async (error) => {
+                if (error.message === 'jwt expired' || error.message === 'jwt malformed') {
+                    if (!this.isRefreshing) {
+                        this.isRefreshing = true;
+                        try {
+                            const newToken = await this.refreshToken();
+                            this.socket?.disconnect();
+                            this.socket = io(API_BASE_URL, {
+                                auth: {
+                                    token: newToken
+                                }
+                            });
+                            this.replayPendingEvents();
+                        } catch (refreshError) {
+                            console.error('Failed to refresh token:', refreshError);
+                            this.socket?.disconnect();
+                            window.location.href = '/login';
+                        } finally {
+                            this.isRefreshing = false;
+                        }
+                    }
+                }
+            });
+
+            this.socket.on('connect', () => {
+                console.log('Socket connected');
+                this.replayPendingEvents();
+            });
+
+            // this.socket.on('disconnect', () => {
+            //     console.log('Socket disconnected');
+            // });
+
+        } catch (error) {
+            console.error('Error connecting socket:', error);
+            throw error;
+        }
+    }
+
+    private replayPendingEvents() {
+        if (this.socket?.connected) {
+            this.pendingEvents.forEach(({ event, data }) => {
+                this.socket?.emit(event, data);
+            });
+            this.pendingEvents = [];
+        }
+    }
+
+    public emit(event: string, data: any, namespace: string) {
+        if (this.socket?.connected) {
+            this.socket.emit(event, data);
+        } else {
+            this.pendingEvents.push({ event, data });
+            this.connect(namespace);
+        }
+    }
+
+    public on(event: string, callback: (data: any) => void) {
+        this.socket?.on(event, callback);
+    }
+
+    public off(event: string, callback?: (data: any) => void) {
+        this.socket?.off(event, callback);
+    }
+
+    public disconnect() {
+        this.socket?.disconnect();
+        this.socket = null;
+    }
+}
+
+export const socketManager = SocketManager.getInstance(); 
