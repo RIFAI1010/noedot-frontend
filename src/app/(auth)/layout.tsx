@@ -7,7 +7,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <div className="flex flex-col items-center w-full max-w-md">
                     {/* Logo */}
                 <div className="w-42 z-10 mt-10 mb-10">
-                    <img src="/next.svg" alt="Logo" className="w-full dark:invert" />
+                    <img src="/next.png" alt="Logo" className="w-full dark:invert" />
                 </div>
                 <div className="z-1 w-full">
                     {children}

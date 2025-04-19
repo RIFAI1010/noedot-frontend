@@ -248,6 +248,31 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                     )
                 )
             }
+            if (data.socketAction === 'createRowData') {
+                setRows(prevRows =>
+                    prevRows.map(r =>
+                        r.id === data.newRowData.rowId
+                            ? {
+                            ...r,
+                            rowData: [...r.rowData, data.newRowData]
+                        }
+                        : r
+                    )
+                )
+            }
+            if (data.socketAction === 'deleteRowData') {
+                setRows(prevRows =>
+                    prevRows.map(row => {
+                        if (row.id === data.deletedRowData.rowId) {
+                            return {
+                                ...row,
+                                rowData: row.rowData.filter(rd => rd.id !== data.deletedRowData.id)
+                            }
+                        }
+                        return row
+                })
+            )
+            }
             if (data.socketAction === 'updateCol') {
                 setCols(prevCols =>
                     prevCols.map(col =>
@@ -431,17 +456,17 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                 colId,
             })
             // Update local state
-            setRows(prevRows =>
-                prevRows.map(row => {
-                    if (row.id === rowId) {
-                        return {
-                            ...row,
-                            rowData: [...row.rowData, response.data]
-                        }
-                    }
-                    return row
-                })
-            )
+            // setRows(prevRows =>
+            //     prevRows.map(row => {
+            //         if (row.id === rowId) {
+            //             return {
+            //                 ...row,
+            //                 rowData: [...row.rowData, response.data]
+            //             }
+            //         }
+            //         return row
+            //     })
+            // )
         } catch (error) {
             console.error('Error adding row data:', error)
         }
@@ -451,17 +476,17 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
         try {
             await axiosInstance.delete(`/table/row-data/${rowDataId}`)
             // Update local state
-            setRows(prevRows =>
-                prevRows.map(row => {
-                    if (row.id === rowId) {
-                        return {
-                            ...row,
-                            rowData: row.rowData.filter(rd => rd.id !== rowDataId)
-                        }
-                    }
-                    return row
-                })
-            )
+            // setRows(prevRows =>
+            //     prevRows.map(row => {
+            //         if (row.id === rowId) {
+            //             return {
+            //                 ...row,
+            //                 rowData: row.rowData.filter(rd => rd.id !== rowDataId)
+            //             }
+            //         }
+            //         return row
+            //     })
+            // )
         } catch (error) {
             console.error('Error deleting row data:', error)
         }
@@ -557,7 +582,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                         )}
                         <input
                             type="text"
-                            className="border-none outline-none bg-transparent text-zinc-300 text-lg font-bold w-full"
+                            className="border-none outline-none text-zinc-300 text-lg font-bold w-full bg-transparent shadow-md p-1 rounded-md"
                             placeholder="Table Name"
                             value={name ?? ''}
                             disabled={!editable}
@@ -610,7 +635,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                                 </thead>
                                 <tbody>
                                     {rows.map((row) => (
-                                        <tr key={row.id} className="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 border-zinc-200 group relative">
+                                        <tr key={row.id} className="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 border-zinc-200 relative">
                                             {cols.map((col) => {
                                                 const rowDataItems = row.rowData.filter(rd => rd.colId === col.id)
                                                 return (
@@ -659,16 +684,16 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                                                                                         colId: col.id,
                                                                                         content: value
                                                                                     })
-                                                                                    setRows(prevRows =>
-                                                                                        prevRows.map(r =>
-                                                                                            r.id === row.id
-                                                                                                ? {
-                                                                                                    ...r,
-                                                                                                    rowData: [...r.rowData, response.data]
-                                                                                                }
-                                                                                                : r
-                                                                                        )
-                                                                                    )
+                                                                                    // setRows(prevRows =>
+                                                                                    //     prevRows.map(r =>
+                                                                                    //         r.id === row.id
+                                                                                    //             ? {
+                                                                                    //                 ...r,
+                                                                                    //                 rowData: [...r.rowData, response.data]
+                                                                                    //             }
+                                                                                    //             : r
+                                                                                    //     )
+                                                                                    // )
                                                                                 }
                                                                             }, 1000)
                                                                             setContentSaveTimeout(timeout)
@@ -690,7 +715,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                                                 )
                                             })}
                                             {editable && (
-                                                <td key={`${row.id}-delete`} className="px-6 py-2">
+                                                <td key={`${row.id}-delete`} className="px-6 py-2 group">
                                                     <button
                                                         className="text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer right-4"
                                                         onClick={() => handleRemoveRow(row.id)}
