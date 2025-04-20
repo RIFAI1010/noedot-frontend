@@ -28,7 +28,7 @@ export default function PublicRoute({ children }: PublicRouteProps) {
       if (callbackUrl && !ignoreCallbackUrl.includes(callbackUrl)) {
         router.push(callbackUrl);
       } else {
-        router.push('/dashboard');
+        router.push('/');
       }
     } else {
       setLoading(false)

@@ -47,7 +47,7 @@ export default function LoginPage() {
             if (callbackUrl && !ignoreCallbackUrl.includes(callbackUrl)) {
                 router.push(callbackUrl);
             } else {
-                router.push('/dashboard');
+                router.push('/');
             }
         } catch (err: unknown) {
             const error = err as ApiError;
