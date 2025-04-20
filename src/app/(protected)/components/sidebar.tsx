@@ -114,7 +114,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
         // if (isInitialFetch) {
         try {
             if (isInitialFetch) setIsLoading(true);
-            const response = await axiosInstance.get('/note?my=false');
+            const response = await axiosInstance.get('/note?filter=my');
             setNotes(response.data);
         } catch (error) {
             console.log(error);

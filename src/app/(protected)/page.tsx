@@ -1,104 +1,203 @@
 'use client'
-import React, { useState } from 'react';
+import { axiosInstance } from '@/utils/config';
+import React, { useEffect, useState } from 'react';
+import { FaPlus, FaStar } from 'react-icons/fa6';
+import { useRouter } from 'next/navigation';
 
-const notes = [
-    { id: 1, title: 'Note 1', content: 'Ini isi note pertama.' },
-    { id: 2, title: 'Note 2', content: 'Ini isi note kedua.' },
-    { id: 3, title: 'Note 3', content: 'Ini isi note ketiga.' },
-    { id: 4, title: 'Note 4', content: 'Ini isi note keempat.' },
-    { id: 5, title: 'Note 5', content: 'Ini isi note kelima.' },
-    { id: 6, title: 'Note 5', content: 'Ini isi note kelima.' },
-    { id: 7, title: 'Note 7', content: 'Ini isi note ketujuh.' },
-    { id: 8, title: 'Note 8', content: 'Ini isi note kedelapan.' },
-    { id: 9, title: 'Note 9', content: 'Ini isi note kesembilan.' },
-];
+// const notes = [
+//     { id: 1, title: 'Note 1', content: 'Ini isi note pertama.', isFavorite: true },
+//     { id: 2, title: 'Note 2', content: 'Ini isi note kedua.', isFavorite: false },
+//     { id: 3, title: 'Note 3', content: 'Ini isi note ketiga.', isFavorite: true },
+//     { id: 4, title: 'Note 4', content: 'Ini isi note keempat.', isFavorite: false },
+//     { id: 5, title: 'Note 5', content: 'Ini isi note kelima.', isFavorite: true },
+//     { id: 6, title: 'Note 6', content: 'Ini isi note keenam.', isFavorite: false },
+//     { id: 7, title: 'Note 7', content: 'Ini isi note ketujuh.', isFavorite: true },
+//     { id: 8, title: 'Note 8', content: 'Ini isi note kedelapan.', isFavorite: false },
+// ];
+
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.abs(now.getTime() - date.getTime()) / 1000;
+    const diffInMinutes = diffInSeconds / 60;
+    const diffInHours = diffInMinutes / 60;
+
+    if (diffInSeconds < 60) {
+        return 'Baru saja';
+    } else if (diffInMinutes < 60) {
+        const minutes = Math.floor(diffInMinutes);
+        return `${minutes} menit yang lalu`;
+    } else if (diffInHours < 24) {
+        const hours = Math.floor(diffInHours);
+        return `${hours} jam yang lalu`;
+    } else if (diffInHours < 48) {
+        return 'Kemarin';
+    } else {
+        const options: Intl.DateTimeFormatOptions = { 
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return date.toLocaleDateString('id-ID', options);
+    }
+};
 
 export default function Home() {
-    const [noteType, setNoteType] = useState<'my' | 'shared'>('my');
+    const router = useRouter();
+    const [noteType, setNoteType] = useState<'my' | 'shared' | 'favorite'>('my');
+    const [notesRecentlyOpened, setNotesRecentlyOpened] = useState<[]>([]);
+    const [notes, setNotes] = useState<[]>([]);
+    
+    const handleNoteClick = (noteId: string) => {
+        router.push(`/note/${noteId}`);
+    };
 
-    // return (
-    //     <div className="min-h-screen bg-zinc-950 p-6 text-zinc-200">
-    //         <h1 className="text-2xl font-bold mb-4">Baru-baru Dibuka</h1>
+    const fetchRecentlyOpenedNotes = async () => {
+        try {
+            const response = await axiosInstance.get('/note?filter=all&sort=openAt');
+            const data = await response.data;
+            setNotesRecentlyOpened(data);
+        } catch (error) {
+            console.error('Error fetching recently opened notes:', error);
+        }
+    };
 
-    //         <div className="flex space-x-4 overflow-x-auto pb-4 mb-6 custom-scrollbar">
-    //             {notes.map(note => (
-    //                 <div key={note.id} className="min-w-[200px] w-60 flex-shrink-0 rounded-2xl shadow bg-zinc-800 text-zinc-100 p-4">
-    //                     <h2 className="font-semibold text-lg mb-2">{note.title}</h2>
-    //                     <p className="text-sm text-zinc-400">{note.content}</p>
-    //                 </div>
-    //             ))}
-    //         </div>
+    const fetchNotes = async () => {
+        try {
+            const response = await axiosInstance.get('/note?filter=' + noteType);
+            const data = await response.data;
+            setNotes(data);
+        } catch (error) {
+            console.error('Error fetching notes:', error);
+        }
+    };
 
-    //         <div className="mb-4 flex space-x-4">
-    //             <label className="flex items-center space-x-2">
-    //                 <input
-    //                     type="radio"
-    //                     name="noteType"
-    //                     value="my"
-    //                     checked={noteType === 'my'}
-    //                     onChange={() => setNoteType('my')}
-    //                     className="accent-zinc-600"
-    //                 />
-    //                 <span>My Notes</span>
-    //             </label>
-    //             <label className="flex items-center space-x-2">
-    //                 <input
-    //                     type="radio"
-    //                     name="noteType"
-    //                     value="shared"
-    //                     checked={noteType === 'shared'}
-    //                     onChange={() => setNoteType('shared')}
-    //                     className="accent-zinc-600"
-    //                 />
-    //                 <span>Shared Notes</span>
-    //             </label>
-    //         </div>
+    useEffect(() => {
+        fetchNotes();
+    }, [noteType]);
+    
+    useEffect(() => {
+        fetchRecentlyOpenedNotes();
+        fetchNotes();
+    }, []);
 
-    //         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    //             {notes.slice(0, 4).map(note => (
-    //                 <div key={note.id} className="rounded-2xl shadow bg-zinc-800 text-zinc-100 p-4">
-    //                     <h2 className="font-semibold text-lg mb-2">{note.title}</h2>
-    //                     <p className="text-sm text-zinc-400">{note.content}</p>
-    //                 </div>
-    //             ))}
-    //         </div>
-    //     </div>
-    // );
-
-    // debug
     return (
-        <div className="min-h-screen bg-green-500 p-6 w-[100%]">
-            <div className='min-h-screen bg-red-500'>
-                <div>
-                    <h1>content scroll horizontal</h1>
-                    <div className='bg-blue-500 flex gap-4 overflow-x-auto pb-4 mb-6 custom-scrollbar w-full'>
-                        <div className="min-w-[200px] w-60 flex-shrink-0 rounded-2xl shadow bg-zinc-800 text-zinc-100 p-4">
-                            <h2 className="font-semibold text-lg mb-2">Note 1</h2>
-                            <p className="text-sm text-zinc-400">Ini isi note pertama.</p>
-                        </div>
-                        <div className="min-w-[200px] w-60 flex-shrink-0 rounded-2xl shadow bg-zinc-800 text-zinc-100 p-4">
-                            <h2 className="font-semibold text-lg mb-2">Note 1</h2>
-                            <p className="text-sm text-zinc-400">Ini isi note pertama.</p>
-                        </div>
-                        <div className="min-w-[200px] w-60 flex-shrink-0 rounded-2xl shadow bg-zinc-800 text-zinc-100 p-4">
-                            <h2 className="font-semibold text-lg mb-2">Note 1</h2>
-                            <p className="text-sm text-zinc-400">Ini isi note pertama.</p>
-                        </div>
-                        <div className="min-w-[200px] w-60 flex-shrink-0 rounded-2xl shadow bg-zinc-800 text-zinc-100 p-4">
-                            <h2 className="font-semibold text-lg mb-2">Note 1</h2>
-                            <p className="text-sm text-zinc-400">Ini isi note pertama.</p>
-                        </div>
-                        <div className="min-w-[200px] w-60 flex-shrink-0 rounded-2xl shadow bg-zinc-800 text-zinc-100 p-4">
-                            <h2 className="font-semibold text-lg mb-2">Note 1</h2>
-                            <p className="text-sm text-zinc-400">Ini isi note pertama.</p>
-                        </div>
-                        <div className="min-w-[200px] w-60 flex-shrink-0 rounded-2xl shadow bg-zinc-800 text-zinc-100 p-4">
-                            <h2 className="font-semibold text-lg mb-2">Note 1</h2>
-                            <p className="text-sm text-zinc-400">Ini isi note pertama.</p>
-                        </div>
+        <div className="p-2 sm:p-4 space-y-4 sm:space-y-6 max-w-[80vw] mx-auto">
+            {/* Baru Baru Dibuka */}
+            <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-base sm:text-lg font-semibold text-zinc-300">Baru Baru Dibuka</h2>
+                    <div className="flex items-center gap-1 text-zinc-400 text-xs">
+                        <span>Scroll untuk melihat lebih banyak</span>
+                        <span className="animate-pulse">→</span>
                     </div>
                 </div>
+                <div className="flex overflow-x-auto gap-2 sm:gap-4 pb-2 custom-scrollbar">
+                    {notesRecentlyOpened.map((note: any) => (
+                        <div 
+                            key={note.id} 
+                            onClick={() => handleNoteClick(note.id)}
+                            className="group flex-shrink-0 w-48 sm:w-64 h-32 sm:h-40 bg-zinc-800 rounded-lg p-3 sm:p-4 hover:bg-zinc-700 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-zinc-900/50"
+                        >
+                            <div className="flex items-start justify-between">
+                                <h3 className="text-sm sm:text-base text-zinc-200 font-medium">{note.title}</h3>
+                                {/* {note.isFavorite && (
+                                    <FaStar className="text-yellow-400 text-sm" />
+                                )} */}
+                            </div>
+                            <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-2 line-clamp-2 sm:line-clamp-3">{note.content}</p>
+                            <div className="mt-2 text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                                Dibuka {formatDate(note.noteUserOpen[0].openAt)}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
+
+            {/* Radio Button untuk My Note / Shared Note */}
+            <div className="flex items-center justify-between border border-zinc-700 rounded-lg">
+                <div className="relative w-full text-center">
+                    <label
+                        htmlFor="myNote"
+                        className={`cursor-pointer block px-4 py-2 text-sm rounded-s-lg transition-all ${noteType === 'my' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'}`}
+                    >
+                        <input
+                            type="radio"
+                            id="myNote"
+                            name="noteType"
+                            value="my"
+                            checked={noteType === 'my'}
+                            onChange={(e) => setNoteType(e.target.value as 'my' | 'shared' | 'favorite')}
+                            className="absolute opacity-0 right-0 w-full h-full cursor-pointer"
+                        />
+                        My Notes
+                    </label>
+                </div>
+                <div className="relative w-full text-center">
+                    <label
+                        htmlFor="sharedNote"
+                        className={`cursor-pointer block px-4 py-2 text-sm transition-all ${noteType === 'shared' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'}`}
+                    >
+                        <input
+                            type="radio"
+                            id="sharedNote"
+                            name="noteType"
+                            value="shared"
+                            checked={noteType === 'shared'}
+                            onChange={(e) => setNoteType(e.target.value as 'my' | 'shared' | 'favorite')}
+                            className="absolute opacity-0 left-0 w-full h-full cursor-pointer"
+                        />
+                        Shared Notes
+                    </label>
+                </div>
+                <div className="relative w-full text-center">
+                    <label
+                        htmlFor="favoriteNote"
+                        className={`cursor-pointer block px-4 py-2 text-sm rounded-e-lg transition-all ${noteType === 'favorite' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'}`}
+                    >
+                        <input
+                            type="radio"
+                            id="favoriteNote"
+                            name="noteType"
+                            value="favorite"
+                            checked={noteType === 'favorite'}
+                            onChange={(e) => setNoteType(e.target.value as 'my' | 'shared' | 'favorite')}
+                            className="absolute opacity-0 left-0 w-full h-full cursor-pointer"
+                        />
+                        Favorit
+                    </label>
+                </div>
+            </div>
+
+            {/* Grid Notes */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+                {notes.map((note: any) => (
+                    <div 
+                        key={note.id} 
+                        onClick={() => handleNoteClick(note.id)}
+                        className="group bg-zinc-800 rounded-lg p-3 sm:p-4 hover:bg-zinc-700 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-zinc-900/50"
+                    >
+                        <div className="flex items-start justify-between">
+                            <h3 className="text-sm sm:text-base text-zinc-200 font-medium">{note.title}</h3>
+                            {note.isFavorite && (
+                                <FaStar className="text-yellow-400 text-sm" />
+                            )}
+                        </div>
+                        <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-2 line-clamp-2 sm:line-clamp-3">{note.content}</p>
+                        <div className="mt-2 flex items-center justify-between text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                            <span>Terakhir diubah: {formatDate(note.updatedAt)}</span>
+                            <span className="px-2 py-0.5 bg-zinc-700 rounded-full text-zinc-300">{note.status}</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Floating Action Button */}
+            <button className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 w-10 h-10 sm:w-12 sm:h-12 bg-zinc-700 rounded-full flex items-center justify-center hover:bg-zinc-600 transition-all duration-200 hover:shadow-lg hover:shadow-zinc-900/50 group">
+                <FaPlus className="text-sm sm:text-base text-zinc-300 group-hover:rotate-90 transition-transform duration-200" />
+            </button>
         </div>
-    )
+    );
 }
