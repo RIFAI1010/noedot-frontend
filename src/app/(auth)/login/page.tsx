@@ -3,8 +3,8 @@
 // import Google from "next-auth/providers/google";
 // import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import GoogleLoginButton from "@/app/(auth)/components/GoogleLoginButton";
 import { axiosPublic, ignoreCallbackUrl } from "@/utils/config";
 
@@ -24,9 +24,9 @@ export default function LoginPage() {
     const [loginLoading, setLoginLoading] = useState(false);
     const [googleAuthLoading, setGoogleAuthLoading] = useState(false);
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [forgotLoading, setForgotLoading] = useState(false);
     const [forgotMessage, setForgotMessage] = useState(false);
-
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -43,7 +43,7 @@ export default function LoginPage() {
             localStorage.setItem("accessToken", response.data.accessToken);
             localStorage.setItem("name", response.data.name);
             localStorage.setItem("avatar", response.data.avatar);
-            const callbackUrl = new URL(window.location.href).searchParams.get('callbackUrl');
+            const callbackUrl = searchParams.get('callbackUrl');
             if (callbackUrl && !ignoreCallbackUrl.includes(callbackUrl)) {
                 router.push(callbackUrl);
             } else {
