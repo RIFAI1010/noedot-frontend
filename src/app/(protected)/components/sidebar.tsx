@@ -511,21 +511,23 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 </div>
                 <div className="px-4">
                     <div className={`flex flex-col gap-2 bg-zinc-800 border border-zinc-700 p-2 rounded-lg`}>
-                        <div className="flex gap-2 flex-1 items-center justify-start w-full">
-                            <div className="w-10 h-10 min-w-10 min-h-10 rounded-full overflow-hidden border-2 border-zinc-700">
-                                {avatar !== 'null' ? (
-                                    <Image src={avatar} alt="avatar" width={40} height={40} />
-                                ) : (
-                                    <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                                        <span className="text-zinc-400 text-lg font-bold">{name.charAt(0).toUpperCase()}</span>
-                                    </div>
-                                )}
+                        <div className="flex gap-2 flex-1 items-center justify-between w-full">
+                            <div className="flex gap-2 items-center">
+                                <div className="w-10 h-10 min-w-10 min-h-10 rounded-full overflow-hidden border-2 border-zinc-700">
+                                    {avatar !== 'null' ? (
+                                        <Image src={avatar} alt="avatar" width={40} height={40} />
+                                    ) : (
+                                        <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                                            <span className="text-zinc-400 text-lg font-bold">{name.charAt(0).toUpperCase()}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-md font-bold truncate">{name}</p>
                             </div>
-                            <p className="text-md font-bold truncate">{name}</p>
                             <div className="relative" ref={settingsDropdownRef}>
                                 <IoSettingsOutline 
                                     title="Settings" 
-                                    className="text-zinc-300 hover:text-zinc-200 min-w-5 min-h-5 cursor-pointer ml-auto" 
+                                    className="text-zinc-300 hover:text-zinc-200 min-w-5 min-h-5 cursor-pointer" 
                                     onClick={() => setShowSettingsDropdownAction(!showSettingsDropdownAction)}
                                 />
                                 {shouldRenderSettingsDropdown && (
