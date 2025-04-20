@@ -1,4 +1,5 @@
 // utils/componentRegistry.ts
+import DocumentEditor from "@/components/DocumentEditor/Editor";
 import TableBlock from "@/components/Note/tableNoteComponent"
 
 export interface BlockProps {
@@ -23,4 +24,5 @@ export const blockRegistry: Record<
     React.FC<BlockProps>
 > = {
     table: TableBlock,
+    document: DocumentEditor
 }

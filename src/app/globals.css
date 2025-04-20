@@ -193,7 +193,7 @@ body {
 }
 
 .ProseMirror {
-  height: 500px;
+  height: 100%;
   outline: none;
 }
 

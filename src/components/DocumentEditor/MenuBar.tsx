@@ -22,10 +22,9 @@ import {
 
 interface MenuBarProps {
     editor: Editor
-    noteId: string
 }
 
-const MenuBar = ({ noteId, editor }: MenuBarProps) => {
+const MenuBar = ({ editor }: MenuBarProps) => {
 
     // const { editor } = useCurrentEditor()
 
@@ -33,23 +32,9 @@ const MenuBar = ({ noteId, editor }: MenuBarProps) => {
     //     return null
     // }
 
-    const handleInsertTable = async () => {
-        try {
-            const response = await axiosInstance.post('/table', { noteId })
-            const tableId = response.data.id
-            editor.chain().focus().insertContent({
-                type: 'customTable',
-                attrs: {
-                    id: tableId
-                }
-            }).run()
-        } catch (error) {
-            console.error('Error inserting table:', error)
-        }
-    }
 
     return (
-        <div className="menu-bar flex gap-2 flex-wrap p-2 border-b border-zinc-500 bg-zinc-800">
+        <div className="menu-bar flex gap-2 flex-wrap p-2 border-b border-zinc-500 bg-zinc-800 mb-2">
             {/* Text Formatting */}
             <div className="flex gap-2">
                 <button
@@ -199,19 +184,6 @@ const MenuBar = ({ noteId, editor }: MenuBarProps) => {
                     title="Insert Link"
                 >
                     <Link size={16} />
-                </button>
-            </div>
-
-            <div className="w-[1px] my-1 bg-zinc-500" />
-
-            {/* Table */}
-            <div className="flex gap-2">
-                <button
-                    onClick={() => handleInsertTable()}
-                    className="p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700"
-                    title="Insert Table"
-                >
-                    <Table size={16} />
                 </button>
             </div>
 

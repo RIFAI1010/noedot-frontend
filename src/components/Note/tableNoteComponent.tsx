@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { TiDelete } from "react-icons/ti";
 import { useRouter } from "next/navigation";
 import { getSocket } from "@/utils/socketClient";
+import { ModalAlert } from "./modalAlert";
 
 
 interface Col {
@@ -23,93 +24,7 @@ interface Row {
     }[];
 }
 
-interface ModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onConfirm: () => void;
-    title: string;
-    message: string;
-}
 
-const Modal = ({ isOpen, onClose, onConfirm, title, message }: ModalProps) => {
-    const [shouldRender, setShouldRender] = useState(false);
-    const [showModal, setShowModal] = useState(false);
-    const modalRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (isOpen) {
-            setShouldRender(true);
-            const timer = setTimeout(() => {
-                setShowModal(true);
-            }, 100);
-            return () => clearTimeout(timer);
-        } else {
-            setShowModal(false);
-            const timer = setTimeout(() => {
-                setShouldRender(false);
-            }, 300);
-            return () => clearTimeout(timer);
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-                onClose();
-            }
-        };
-
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                onClose();
-            }
-        };
-
-        const handleEnter = (event: KeyboardEvent) => {
-            if (event.key === 'Enter') {
-                onConfirm();
-            }
-        };
-
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            document.addEventListener('keydown', handleEscape);
-            document.addEventListener('keydown', handleEnter);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleEscape);
-            document.removeEventListener('keydown', handleEnter);
-        };
-    }, [isOpen, onClose, onConfirm]);
-
-    if (!shouldRender) return null;
-
-    return (
-        <div className={`fixed inset-0 bg-background/30 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300 ${showModal ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-            <div ref={modalRef} className={`bg-zinc-900 p-6 rounded-lg w-[400px] border border-zinc-700 transition-all duration-300 transform ${showModal ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}>
-                <h3 className="text-xl font-semibold text-zinc-300 mb-2">{title}</h3>
-                <p className="text-zinc-400 mb-4">{message}</p>
-                <div className="flex justify-end gap-2">
-                    <button
-                        className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded hover:bg-zinc-600 cursor-pointer"
-                        onClick={onClose}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
-                        onClick={onConfirm}
-                        autoFocus
-                    >
-                        Delete
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 // Data dummy untuk demonstrasi
 // const dummyData = {
@@ -169,7 +84,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
     const [editableNote, setEditableNote] = useState(noteEditable)
     const [isSourceNote, setIsSourceNote] = useState(false)
     const [sourceNote, setSourceNote] = useState<any>(null)
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
     const [tableRelationAccessDenied, setTableRelationAccessDenied] = useState({
         isAccessDenied: true,
         message: ''
@@ -530,7 +445,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
 
     return (
         <>
-            <Modal
+            <ModalAlert
                 isOpen={modalState.isOpen}
                 onClose={handleModalClose}
                 onConfirm={handleModalConfirm}
@@ -546,7 +461,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                     </div>
                 ) : (
                     <div className="bg-zinc-800 rounded-lg p-4 flex items-center gap-2">
-                        {editableNote && (
+                        {(editableNote || editable) &&  (
                             <button 
                             className="bg-zinc-700 text-zinc-300 px-2 py-1 rounded-md hover:bg-zinc-600 cursor-pointer"
                             title="Delete Table"
@@ -563,7 +478,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                     {!isSourceNote && sourceNote && (
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                                <p className="text-zinc-300 text-lg">Table From</p>
+                                <p className="text-zinc-300 text-sm">Table From</p>
                                 <Link href={`/note/${sourceNote.id}`} className="text-blue-500 hover:text-blue-600">
                                     {sourceNote.title}
                                 </Link>
@@ -571,7 +486,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                         </div>
                     )}
                     <div className="flex justify-start items-center mb-4 relative gap-2">
-                        {editableNote && (
+                        {(editableNote || editable) && (
                             <button 
                             className="bg-zinc-700 text-zinc-300 px-2 py-1 rounded-md hover:bg-zinc-600 cursor-pointer"
                         title="Delete Table"
@@ -595,7 +510,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                     </div>
                     <div>
                         <div className="relative overflow-x-auto shadow-md sm:rounded-lg custom-scrollbar">
-                            <table className="w-full text-sm text-left rtl:text-right text-zinc-500 dark:text-zinc-400">
+                            <table className="w-full text-sm text-left rtl:text-right text-zinc-500 dark:text-zinc-400 border-3 border-zinc-700">
                                 <thead className="text-xs text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
                                     <tr className="">
                                         {cols.map((col) => (
@@ -633,9 +548,9 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                                         )}
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="">
                                     {rows.map((row) => (
-                                        <tr key={row.id} className="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 border-zinc-200 relative">
+                                        <tr key={row.id} className="bg-white border-b dark:bg-zinc-900 dark:border-zinc-700 border-zinc-200 relative">
                                             {cols.map((col) => {
                                                 const rowDataItems = row.rowData.filter(rd => rd.colId === col.id)
                                                 return (

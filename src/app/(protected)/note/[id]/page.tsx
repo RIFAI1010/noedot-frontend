@@ -187,6 +187,17 @@ const NotePage = () => {
             console.error('Error adding table:', error)
         }
     }
+    
+    const handleAddDocument = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault()
+        try {
+            const response = await axiosInstance.post(`/document`, {
+                noteId: id
+            })
+        } catch (error) {
+            console.error('Error adding document:', error)
+        }
+    }
 
     const handleComponentDeleted = (componentId: string) => {
         setBlocks(prevBlocks => prevBlocks.filter((block: Block) =>
@@ -300,7 +311,7 @@ const NotePage = () => {
 
     const fetchRelationComponents = async () => {
         try {
-            const response = await axiosInstance.get(`/${relationType}?filter=${relationFilter}`)
+            const response = await axiosInstance.get(`/${relationType}?filter=${relationFilter}&noteId=${id}`)
             setRelationComponents(response.data)
         } catch (error) {
             console.error('Error fetching relation components:', error)
@@ -345,8 +356,29 @@ const NotePage = () => {
         fetchRelationComponents()
     }, [relationType, relationFilter])
 
+    const handleRelationComponentClick = async (component: any) => {
+        // console.log('debug: relation component clicked: ', component)
+        try {
+            const response = await axiosInstance.post(`${component.type}/${component.id}/relation/${id}`)
+            console.log('debug: relation component added: ', response.data)
+        } catch (error: any) {
+            if (error.response.data.serverCode === 'COMPONENTS_ALREADY_RELATED_TO_NOTE') {
+                window.dispatchEvent(new CustomEvent('showNotification', {
+                    detail: {
+                        message: 'Components already related to note',
+                        type: 'error'
+                    }
+                }));
+            } else {
+                console.error('Error adding relation:', error)
+            }
+        } finally {
+            handleRelationModalClose()
+        }
+    }
+
     return (
-        <div className="document-page max-w-[1000px] mx-auto px-4">
+        <div className="document-page max-w-[1000px] mx-auto px-4 mb-30">
             <div className="flex items-center justify-between p-4 border-b border-zinc-700 relative">
                 <input
                     type="text"
@@ -363,37 +395,38 @@ const NotePage = () => {
             </div>
             <div className="menu-bar flex justify-between items-center p-2 border-b border-zinc-500 bg-zinc-800 rounded-b-lg">
                 <div className="flex gap-2">
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handlePositionModalOpen}
-                            className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
-                            title="Edit Position"
-                        >
-                            <GoStack size={16} />
-                        </button>
-                    </div>
-                    <div className="w-[1px] my-1 bg-zinc-500" />
-                    <div className="flex gap-2">
-                        <button
-                            className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
-                            title="Document"
-                        >
-                            <MdEditNote size={16} />
-                        </button>
-                        <button
-                            onClick={handleAddTable}
-                            className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
-                            title="Table"
-                        >
-                            <CiViewTable size={16} />
-                        </button>
-                        <button
-                            className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
-                            title="Gallery"
-                        >
-                            <IoMdImages size={16} />
-                        </button>
-                    </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={handlePositionModalOpen}
+                        className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
+                        title="Edit Position"
+                    >
+                        <GoStack size={16} />
+                    </button>
+                </div>
+                <div className="w-[1px] my-1 bg-zinc-500" />
+                <div className="flex gap-2">
+                    <button
+                            onClick={handleAddDocument}
+                        className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
+                        title="Document"
+                    >
+                        <MdEditNote size={16} />
+                    </button>
+                    <button
+                        onClick={handleAddTable}
+                        className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
+                        title="Table"
+                    >
+                        <CiViewTable size={16} />
+                    </button>
+                    <button
+                        className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
+                        title="Gallery"
+                    >
+                        <IoMdImages size={16} />
+                    </button>
+                </div>
                     <div className="w-[1px] my-1 bg-zinc-500" />
                     <div className="flex gap-2">
                         <button
@@ -446,8 +479,8 @@ const NotePage = () => {
                                         <div className="flex justify-between items-center">
                                             <span className="text-zinc-200">
                                                 {block.type.charAt(0).toUpperCase() + block.type.slice(1)} -
-                                                <span className={`${block.details.name ? 'text-zinc-200' : 'text-zinc-400'} ms-1`}>
-                                                    {block.details.name ?? 'Untitled'}
+                                                <span className={`${block.details?.name ? 'text-zinc-200' : 'text-zinc-400'} ms-1`}>
+                                                    {block.details?.name ?? 'Unnamed Component'}
                                                 </span>
                                             </span>
                                             {selectedBlock?.id === block.id && editable && (
@@ -624,15 +657,27 @@ const NotePage = () => {
                                             <div
                                                 key={component.id}
                                                 className="p-3 rounded-md bg-zinc-800 hover:bg-zinc-700 transition-colors cursor-pointer"
+                                                onClick={() => handleRelationComponentClick(component)}
                                             >
                                                 <div className="text-white">
-                                                    {component.name || component.title || 'Unnamed Component'}
+                                                    {component.type.charAt(0).toUpperCase() + component.type.slice(1)} -
+                                                    <span className={`${component.name || component.title ? 'text-zinc-200' : 'text-zinc-400'} ms-1`}>
+                                                        {component.name || component.title || 'Unnamed Component'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <p className="text-zinc-400 text-xs">
+                                                        {component.notes[0].title ?? 'Untitled Note'}
+                                                    </p>
+                                                    <p className="text-zinc-400 text-xs">
+                                                        {component.notes[0].user.name}
+                                                    </p>
                                                 </div>
                                             </div>
                                         ))
                                     ) : (
                                         <div className="text-center text-zinc-400 py-4">
-                                            Tidak ada komponen yang tersedia
+                                            No components available
                                         </div>
                                     )}
                                 </div>
@@ -649,7 +694,7 @@ const NotePage = () => {
                     onChange={(newContent) => {
                     }}
                 /> */}
-                <div className="space-y-4">
+                <div className="space-y-2">
                     {blocks.map((block: Block) => {
                         const BlockComponent = blockRegistry[block.type]
                         if (!BlockComponent) {
