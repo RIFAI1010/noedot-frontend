@@ -195,9 +195,9 @@ export default function Home() {
             </div>
 
             {/* Floating Action Button */}
-            <button className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 w-10 h-10 sm:w-12 sm:h-12 bg-zinc-700 rounded-full flex items-center justify-center hover:bg-zinc-600 transition-all duration-200 hover:shadow-lg hover:shadow-zinc-900/50 group">
+            {/* <button className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 w-10 h-10 sm:w-12 sm:h-12 bg-zinc-700 rounded-full flex items-center justify-center hover:bg-zinc-600 transition-all duration-200 hover:shadow-lg hover:shadow-zinc-900/50 group">
                 <FaPlus className="text-sm sm:text-base text-zinc-300 group-hover:rotate-90 transition-transform duration-200" />
-            </button>
+            </button> */}
         </div>
     );
 }

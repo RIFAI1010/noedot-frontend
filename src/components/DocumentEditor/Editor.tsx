@@ -109,7 +109,9 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
         socket.on(`joinedDocument_${documentId}`, (data) => {
             console.log('Joined document:', data);
             if (data.socketAction === 'updateNote') {
-                setEditable(data.canEdit)
+                // if (data.id !== id) {
+                    setEditable(data.canEdit)
+                // }
             }
             if (data.socketAction === 'updateDocumentName') {
                 setName(data.name)

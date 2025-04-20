@@ -151,7 +151,9 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
         socket.on(`joinedTable_${tableId}`, (data) => {
             console.log('Joined table:', data);
             if (data.socketAction === 'updateNote') {
-                setEditable(data.canEdit)
+                // if (data.id !== id) {
+                    // setEditable(data.canEdit)
+                // }
             }
             if (data.socketAction === 'updateTableName') {
                 setName(data.name)

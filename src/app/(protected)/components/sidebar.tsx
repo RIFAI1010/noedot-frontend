@@ -14,6 +14,7 @@ import { FaTimesCircle } from "react-icons/fa";
 import { io } from "socket.io-client";
 import { disconnectSocket } from "@/utils/socketClient";
 import { connectSocket } from "@/utils/socketClient";
+import { authService } from "@/services/auth";
 
 interface SidebarProps {
     open: boolean
@@ -58,9 +59,13 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     const sidebarRef = useRef<HTMLDivElement>(null)
 
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const settingsDropdownRef = useRef<HTMLDivElement>(null);
     const [showDropdown, setShowDropdown] = useState(false);
     const [showDropdownAction, setShowDropdownAction] = useState(false);
     const [shouldRenderDropdown, setShouldRenderDropdown] = useState(false);
+    const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+    const [showSettingsDropdownAction, setShowSettingsDropdownAction] = useState(false);
+    const [shouldRenderSettingsDropdown, setShouldRenderSettingsDropdown] = useState(false);
 
     const modalRef = useRef<HTMLDivElement>(null);
     const [showNoteModal, setShowNoteModal] = useState(false);
@@ -184,6 +189,9 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             if (userSearchRef.current && !userSearchRef.current.contains(event.target as Node)) {
                 setShowUserSearch(false);
             }
+            if (settingsDropdownRef.current && !settingsDropdownRef.current.contains(event.target as Node)) {
+                setShowSettingsDropdownAction(false);
+            }
         };
 
         const handleEscKey = (event: KeyboardEvent) => {
@@ -192,18 +200,34 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 setShowDropdownAction(false);
                 setNoteOptions(false);
                 setShowUserSearch(false);
+                setShowSettingsDropdownAction(false);
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         document.addEventListener('keydown', handleEscKey);
 
-
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleEscKey);
         };
     }, []);
+
+    useEffect(() => {
+        if (showSettingsDropdownAction) {
+            setShouldRenderSettingsDropdown(true);
+            const timer = setTimeout(() => {
+                setShowSettingsDropdown(true);
+            }, 100);
+            return () => clearTimeout(timer);
+        } else {
+            setShowSettingsDropdown(false);
+            const timer = setTimeout(() => {
+                setShouldRenderSettingsDropdown(false);
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [showSettingsDropdownAction]);
 
     // Efek untuk mengatur posisi dropdown saat scroll
     useEffect(() => {
@@ -468,6 +492,11 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
         };
     }, []);
 
+    const handleLogout = async () => {
+        await authService.logout();
+        router.push('/login');
+    }
+
     return (
         <>
             {open && (
@@ -493,7 +522,29 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                                 )}
                             </div>
                             <p className="text-md font-bold truncate">{name}</p>
-                            <IoSettingsOutline title="Settings" className="text-zinc-300 hover:text-zinc-200 min-w-5 min-h-5 cursor-pointer ml-auto" />
+                            <div className="relative" ref={settingsDropdownRef}>
+                                <IoSettingsOutline 
+                                    title="Settings" 
+                                    className="text-zinc-300 hover:text-zinc-200 min-w-5 min-h-5 cursor-pointer ml-auto" 
+                                    onClick={() => setShowSettingsDropdownAction(!showSettingsDropdownAction)}
+                                />
+                                {shouldRenderSettingsDropdown && (
+                                    <div className={`absolute right-0 mt-2 w-48 bg-zinc-900 border border-zinc-700 rounded-md shadow-lg z-50 transition-all duration-300 ${showSettingsDropdown ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+                                        <div className="py-1">
+                                            <button className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 cursor-pointer">
+                                                Profile Settings
+                                            </button>
+                                            <button className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-zinc-800 cursor-pointer"
+                                            onClick={() => {
+                                                handleLogout();
+                                            }}
+                                            >
+                                                Logout
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <div className={`flex gap-2 py-2 items-center justify-between`}>
