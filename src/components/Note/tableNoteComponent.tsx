@@ -509,7 +509,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                         {saving && <span className="saving-indicator absolute right-0">Saving...</span>}
                     </div>
                     <div>
-                        <div className="relative overflow-x-auto shadow-md sm:rounded-lg custom-scrollbar">
+                        <div className="relative overflow-x-auto shadow-md sm:rounded-lg custom-scrollbar max-w-[100vw] -mx-4 sm:mx-0">
                             <table className="w-full text-sm text-left rtl:text-right text-zinc-500 dark:text-zinc-400 border-3 border-zinc-700">
                                 <thead className="text-xs text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
                                     <tr className="">
@@ -527,7 +527,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                                                 />
                                                 {editable && (
                                                     <button
-                                                        className="text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer absolute right-4"
+                                                        className="text-red-500 hover:text-red-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer absolute right-4"
                                                         onClick={() => handleDeleteColumn(col.id)}
                                                         title="Delete Column"
                                                     >
@@ -570,7 +570,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                                                                     />
                                                                     {editable && rowDataItems.length > 1 && (
                                                                         <button
-                                                                            className="text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                                            className="text-red-500 hover:text-red-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer"
                                                                             onClick={() => handleDeleteRowData(row.id, rowData.id)}
                                                                             title="Delete Row Data"
                                                                         >
@@ -632,7 +632,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                                             {editable && (
                                                 <td key={`${row.id}-delete`} className="px-6 py-2 group">
                                                     <button
-                                                        className="text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer right-4"
+                                                        className="text-red-500 hover:text-red-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer right-4"
                                                         onClick={() => handleRemoveRow(row.id)}
                                                         title="Delete Row"
                                                     >
