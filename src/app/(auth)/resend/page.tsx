@@ -39,7 +39,7 @@ export default function ResendVerification() {
         socket.on(`USER_VERIFIED_${token}`, async (data) => {
             if (data.success) {
                 try {
-                    const response = await axiosPublic.post("/auth/login-token", { token });
+                    const response = await axiosPublic.post("/auth/login-token", { token: data.loginToken });
                     setError(false);
                     setMessage(response.data.message);
                     localStorage.setItem("accessToken", response.data.accessToken);
