@@ -95,24 +95,27 @@ export default function Home() {
                     </div>
                 </div>
                 <div className="flex overflow-x-auto gap-2 sm:gap-4 pb-2 custom-scrollbar">
-                    {notesRecentlyOpened.map((note: any) => (
-                        <div 
-                            key={note.id} 
-                            onClick={() => handleNoteClick(note.id)}
-                            className="group flex-shrink-0 w-48 sm:w-64 h-32 sm:h-40 bg-zinc-800 rounded-lg p-3 sm:p-4 hover:bg-zinc-700 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-zinc-900/50"
-                        >
-                            <div className="flex items-start justify-between">
-                                <h3 className="text-sm sm:text-base text-zinc-200 font-medium">{note.title || 'Untitled'}</h3>
-                                {/* {note.isFavorite && (
-                                    <FaStar className="text-yellow-400 text-sm" />
-                                )} */}
+                    {notesRecentlyOpened.length > 0 ? (
+                        notesRecentlyOpened.map((note: any) => (
+                            <div 
+                                key={note.id} 
+                                onClick={() => handleNoteClick(note.id)}
+                                className="group flex-shrink-0 w-48 sm:w-64 h-32 sm:h-40 bg-zinc-800 rounded-lg p-3 sm:p-4 hover:bg-zinc-700 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-zinc-900/50"
+                            >
+                                <div className="flex items-start justify-between">
+                                    <h3 className="text-sm sm:text-base text-zinc-200 font-medium">{note.title || 'Untitled'}</h3>
+                                </div>
+                                <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-2 line-clamp-2 sm:line-clamp-3">{note.content}</p>
+                                <div className="mt-2 text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                                    Opened {note.noteUserOpen.length > 0 ? formatDate(note.noteUserOpen[0].openAt) : ''}
+                                </div>
                             </div>
-                            <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-2 line-clamp-2 sm:line-clamp-3">{note.content}</p>
-                            <div className="mt-2 text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
-                                Opened {note.noteUserOpen.length > 0 ? formatDate(note.noteUserOpen[0].openAt) : ''}
-                            </div>
+                        ))
+                    ) : (
+                        <div className="flex items-center justify-center w-full h-32 rounded-lg">
+                            <p className="text-zinc-500">No recently opened notes</p>
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
 
