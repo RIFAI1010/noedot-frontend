@@ -23,15 +23,15 @@ const formatDate = (dateString: string) => {
     const diffInHours = diffInMinutes / 60;
 
     if (diffInSeconds < 60) {
-        return 'Baru saja';
+        return 'Just now';
     } else if (diffInMinutes < 60) {
         const minutes = Math.floor(diffInMinutes);
-        return `${minutes} menit yang lalu`;
+        return `${minutes} minutes ago`;
     } else if (diffInHours < 24) {
         const hours = Math.floor(diffInHours);
-        return `${hours} jam yang lalu`;
+        return `${hours} hours ago`;
     } else if (diffInHours < 48) {
-        return 'Kemarin';
+        return 'Yesterday';
     } else {
         const options: Intl.DateTimeFormatOptions = { 
             day: 'numeric', 
@@ -40,7 +40,7 @@ const formatDate = (dateString: string) => {
             hour: '2-digit',
             minute: '2-digit'
         };
-        return date.toLocaleDateString('id-ID', options);
+        return date.toLocaleDateString('en-US', options);
     }
 };
 
@@ -85,12 +85,12 @@ export default function Home() {
 
     return (
         <div className="p-2 sm:p-4 space-y-4 sm:space-y-6 max-w-[80vw] mx-auto">
-            {/* Baru Baru Dibuka */}
+            {/* Recently Opened */}
             <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-base sm:text-lg font-semibold text-zinc-300">Baru Baru Dibuka</h2>
+                    <h2 className="text-base sm:text-lg font-semibold text-zinc-300">Recently Opened</h2>
                     <div className="flex items-center gap-1 text-zinc-400 text-xs">
-                        <span>Scroll untuk melihat lebih banyak</span>
+                        <span>Scroll to see more</span>
                         <span className="animate-pulse">→</span>
                     </div>
                 </div>
@@ -102,14 +102,14 @@ export default function Home() {
                             className="group flex-shrink-0 w-48 sm:w-64 h-32 sm:h-40 bg-zinc-800 rounded-lg p-3 sm:p-4 hover:bg-zinc-700 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-zinc-900/50"
                         >
                             <div className="flex items-start justify-between">
-                                <h3 className="text-sm sm:text-base text-zinc-200 font-medium">{note.title}</h3>
+                                <h3 className="text-sm sm:text-base text-zinc-200 font-medium">{note.title || 'Untitled'}</h3>
                                 {/* {note.isFavorite && (
                                     <FaStar className="text-yellow-400 text-sm" />
                                 )} */}
                             </div>
                             <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-2 line-clamp-2 sm:line-clamp-3">{note.content}</p>
                             <div className="mt-2 text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
-                                Dibuka {formatDate(note.noteUserOpen[0].openAt)}
+                                Opened {note.noteUserOpen.length > 0 ? formatDate(note.noteUserOpen[0].openAt) : ''}
                             </div>
                         </div>
                     ))}
@@ -166,7 +166,7 @@ export default function Home() {
                             onChange={(e) => setNoteType(e.target.value as 'my' | 'shared' | 'favorite')}
                             className="absolute opacity-0 left-0 w-full h-full cursor-pointer"
                         />
-                        Favorit
+                        Favorites
                     </label>
                 </div>
             </div>
@@ -180,14 +180,14 @@ export default function Home() {
                         className="group bg-zinc-800 rounded-lg p-3 sm:p-4 hover:bg-zinc-700 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-zinc-900/50"
                     >
                         <div className="flex items-start justify-between">
-                            <h3 className="text-sm sm:text-base text-zinc-200 font-medium">{note.title}</h3>
+                            <h3 className="text-sm sm:text-base text-zinc-200 font-medium">{note.title || 'Untitled'}</h3>
                             {note.isFavorite && (
                                 <FaStar className="text-yellow-400 text-sm" />
                             )}
                         </div>
                         <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-2 line-clamp-2 sm:line-clamp-3">{note.content}</p>
                         <div className="mt-2 flex items-center justify-between text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
-                            <span>Terakhir diubah: {formatDate(note.updatedAt)}</span>
+                            <span>Last modified: {note.updatedAt ? formatDate(note.updatedAt) : ''}</span>
                             <span className="px-2 py-0.5 bg-zinc-700 rounded-full text-zinc-300">{note.status}</span>
                         </div>
                     </div>
