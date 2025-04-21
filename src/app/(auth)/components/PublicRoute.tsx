@@ -21,6 +21,14 @@ export default function PublicRoute({ children }: PublicRouteProps) {
 
   const handleAuth = async () => {
     const token = localStorage.getItem('accessToken');
+    const currentPath = window.location.pathname;
+    
+    // Izinkan akses ke halaman reset dan verify meskipun sudah login
+    if (currentPath === '/reset' || currentPath === '/verify') {
+      setLoading(false);
+      return;
+    }
+
     if (token) {
       const callbackUrl = searchParams.get('callbackUrl');
       console.log(callbackUrl)
