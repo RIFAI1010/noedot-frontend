@@ -163,18 +163,6 @@ const MenuBar = ({ editor }: MenuBarProps) => {
             <div className="flex gap-2">
                 <button
                     onClick={() => {
-                        const url = window.prompt('Enter image URL:')
-                        if (url) {
-                            editor.chain().focus().setImage({ src: url }).run()
-                        }
-                    }}
-                    className="p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700"
-                    title="Insert Image"
-                >
-                    <Image size={16} />
-                </button>
-                <button
-                    onClick={() => {
                         const url = window.prompt('Enter URL:')
                         if (url) {
                             editor.chain().focus().setLink({ href: url }).run()

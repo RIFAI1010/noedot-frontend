@@ -323,7 +323,6 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
             TiptapLink.configure({
                 openOnClick: false,
             }),
-            Image,
             BulletList,
             OrderedList,
         ],

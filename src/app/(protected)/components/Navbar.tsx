@@ -37,7 +37,7 @@ const Navbar = ({ sidebarOpen, onMenuClick }: NavbarProps) => {
                 <Link href="/" title="dashboard">
                     {/* <img src="/next.png" alt="logo" width={88} className="dark:invert cursor-pointer" /> */}
                     <svg height="88" width="88" xmlns="http://www.w3.org/2000/svg">
-                        <image height="88" width="88" className="dark:invert cursor-pointer" href="/next.png" />
+                        <image height="88" width="88" className=" cursor-pointer" href="/next.png" />
                     </svg>
                 </Link>
                 </div>
