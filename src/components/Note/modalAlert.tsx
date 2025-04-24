@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 
-interface ModalProps {
+export interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: () => void;
     title: string;
     message: string;
+    confirmButtonText: string;
+    cancelButtonText: string;
+    confirmButtonColor: 'confirm' | 'danger' | 'warning' | 'info';
 }
 
-export const ModalAlert = ({ isOpen, onClose, onConfirm, title, message }: ModalProps) => {
+export const ModalAlert = ({ isOpen, onClose, onConfirm, title, message, confirmButtonText, cancelButtonText, confirmButtonColor }: ModalProps) => {
     const [shouldRender, setShouldRender] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const modalRef = useRef<HTMLDivElement>(null);
@@ -73,14 +76,17 @@ export const ModalAlert = ({ isOpen, onClose, onConfirm, title, message }: Modal
                         className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded hover:bg-zinc-600 cursor-pointer"
                         onClick={onClose}
                     >
-                        Cancel
+                        {cancelButtonText}
                     </button>
                     <button
-                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
+                        className={`px-4 py-2 text-white rounded cursor-pointer
+                            ${confirmButtonColor === 'confirm' ? 'hover:bg-green-600' : confirmButtonColor === 'danger' ? 'hover:bg-red-600' : confirmButtonColor === 'warning' ? 'hover:bg-yellow-600' : 'hover:bg-zinc-600'}
+                            ${confirmButtonColor === 'confirm' ? 'bg-green-500' : confirmButtonColor === 'danger' ? 'bg-red-500' : confirmButtonColor === 'warning' ? 'bg-yellow-500' : 'bg-zinc-500'}
+                            `}
                         onClick={onConfirm}
                         autoFocus
                     >
-                        Delete
+                        {confirmButtonText}
                     </button>
                 </div>
             </div>

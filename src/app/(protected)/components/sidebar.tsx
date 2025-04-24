@@ -15,6 +15,8 @@ import { io } from "socket.io-client";
 import { disconnectSocket } from "@/utils/socketClient";
 import { connectSocket } from "@/utils/socketClient";
 import { authService } from "@/services/auth";
+import Modal from '@/components/Modal';
+import { useModal } from '@/hooks/useModal';
 
 interface SidebarProps {
     open: boolean
@@ -67,10 +69,10 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
     const [showSettingsDropdownAction, setShowSettingsDropdownAction] = useState(false);
     const [shouldRenderSettingsDropdown, setShouldRenderSettingsDropdown] = useState(false);
 
-    const modalRef = useRef<HTMLDivElement>(null);
-    const [showNoteModal, setShowNoteModal] = useState(false);
-    const [showNoteModalAction, setShowNoteModalAction] = useState(false);
-    const [shouldRenderNoteModal, setShouldRenderNoteModal] = useState(false);
+    const { isOpen: isNoteModalOpen, openModal: openNoteModal, closeModal: closeNoteModal } = useModal();
+    // const [showNoteModal, setShowNoteModal] = useState(false);
+    // const [showNoteModalAction, setShowNoteModalAction] = useState(false);
+    // const [shouldRenderNoteModal, setShouldRenderNoteModal] = useState(false);
     const [noteModalError, setNoteModalError] = useState('');
     const [isEditMode, setIsEditMode] = useState(false);
     const [status, setStatus] = useState('public');
@@ -180,9 +182,6 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setShowDropdownAction(false);
             }
-            if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-                setShowNoteModalAction(false);
-            }
             if (noteOptionsRef.current && !noteOptionsRef.current.contains(event.target as Node)) {
                 setNoteOptions(false);
             }
@@ -196,7 +195,6 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
 
         const handleEscKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
-                setShowNoteModalAction(false);
                 setShowDropdownAction(false);
                 setNoteOptions(false);
                 setShowUserSearch(false);
@@ -277,31 +275,15 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
         }
     }, [showDropdownAction]);
 
-    useEffect(() => {
-        if (showNoteModalAction) {
-            setShouldRenderNoteModal(true);
-            const timer = setTimeout(() => {
-                setShowNoteModal(true);
-            }, 100);
-            return () => clearTimeout(timer);
-        } else {
-            setShowNoteModal(false);
-            const timer = setTimeout(() => {
-                setShouldRenderNoteModal(false);
-            }, 300);
-            return () => clearTimeout(timer);
-        }
-    }, [showNoteModalAction]);
 
     const handleShowCreateNoteModal = () => {
         setIsEditMode(false);
         setNoteOwner(true);
         setSelectedUsers([]);
         setMockUsers([]);
-        // setMockUsersBefore([]);
         setSearchUserResults([]);
         setSearchUserQuery('');
-        setShowNoteModalAction(true);
+        openNoteModal();
         setShowDropdownAction(false);
         setStatus('private');
         setTitle('');
@@ -313,10 +295,9 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
         try {
             setSelectedUsers([]);
             setMockUsers([]);
-            // setMockUsersBefore([]);
             setSearchUserResults([]);
             setSearchUserQuery('');
-            setShowNoteModalAction(true);
+            openNoteModal();
             setShowDropdownAction(false);
             setNoteOptions(false);
             setStatus('private');
@@ -329,7 +310,6 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             setStatus(response.data.status);
             setTitle(response.data.title);
             setEditable(response.data.editable);
-            // setMockUsersBefore(response.data.noteEdits);
             setMockUsers(response.data.noteEdits);
             setSelectedUsers(response.data.noteEdits.map((user: User) => user.id));
         } catch (error) {
@@ -347,7 +327,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 editable,
                 userAccess: selectedUsers
             });
-            setShowNoteModalAction(false);
+            closeNoteModal();
             await fetchData();
             router.push(`/note/${response.data.id}`);
             showNotification('Note created successfully', 'success');
@@ -370,7 +350,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 editable,
                 userAccess: selectedUsers
             });
-            setShowNoteModalAction(false);
+            closeNoteModal();
             await fetchData();
             window.dispatchEvent(new CustomEvent('noteUpdated'))
             showNotification('Note updated successfully', 'success');
@@ -525,9 +505,9 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                                 <p className="text-md font-bold truncate">{name}</p>
                             </div>
                             <div className="relative" ref={settingsDropdownRef}>
-                                <IoSettingsOutline 
-                                    title="Settings" 
-                                    className="text-zinc-300 hover:text-zinc-200 min-w-5 min-h-5 cursor-pointer" 
+                                <IoSettingsOutline
+                                    title="Settings"
+                                    className="text-zinc-300 hover:text-zinc-200 min-w-5 min-h-5 cursor-pointer"
                                     onClick={() => setShowSettingsDropdownAction(!showSettingsDropdownAction)}
                                 />
                                 {shouldRenderSettingsDropdown && (
@@ -537,9 +517,9 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                                                 Profile Settings
                                             </button>
                                             <button className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-zinc-800 cursor-pointer"
-                                            onClick={() => {
-                                                handleLogout();
-                                            }}
+                                                onClick={() => {
+                                                    handleLogout();
+                                                }}
                                             >
                                                 Logout
                                             </button>
@@ -669,249 +649,240 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 </>
             )}
 
-            {shouldRenderNoteModal && (
-                <div className={`fixed inset-0 bg-background/30 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300 ${showNoteModal ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-                    <div ref={modalRef} className={`bg-zinc-900 p-6 rounded-lg w-[400px] border border-zinc-700 transition-all duration-300 transform ${showNoteModal ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-white">{isEditMode ? 'Edit Note' : 'Create New Note'}</h2>
+            <Modal
+                isOpen={isNoteModalOpen}
+                onClose={closeNoteModal}
+                title={isEditMode ? 'Edit Note' : 'Create New Note'}
+                className="w-[400px]"
+            >
+                <form className="space-y-4" onSubmit={isEditMode ? handleUpdateNote : handleCreateNote}>
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-300 mb-1">
+                            Title
+                        </label>
+                        <input
+                            type="text"
+                            className="w-full px-3 py-2 rounded-lg focus:ring-2 bg-zinc-800 border border-zinc-700 focus:ring-zinc-500 focus:border-zinc-500 focus:bg-zinc-700 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            placeholder="Enter note title"
+                            name="title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            required
+                            disabled={!noteOwner}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-300 mb-1">
+                            Status
+                        </label>
+                        <div>
+                            <div className="flex items-center justify-between border-1 border-zinc-700 rounded-lg">
+                                <div className="relative w-full text-center">
+                                    <label
+                                        htmlFor="private"
+                                        className={`cursor-pointer block px-4 py-2 text-sm rounded-s-lg transition-all ${status === 'private' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${!noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    >
+                                        <input
+                                            disabled={!noteOwner}
+                                            type="radio"
+                                            id="private"
+                                            name="status"
+                                            value="private"
+                                            checked={status === 'private'}
+                                            onChange={(e) => {
+                                                setStatus(e.target.value)
+                                                setEditable('me')
+                                            }}
+                                            className={`absolute opacity-0 right-0 w-full h-full ${!noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                        />
+                                        Private
+                                    </label>
+                                </div>
+                                <div className="relative w-full text-center">
+                                    <label
+                                        htmlFor="access"
+                                        className={`cursor-pointer block px-4 py-2 text-sm transition-all ${status === 'access' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${!noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    >
+                                        <input
+                                            disabled={!noteOwner}
+                                            type="radio"
+                                            id="access"
+                                            name="status"
+                                            value="access"
+                                            checked={status === 'access'}
+                                            onChange={(e) => setStatus(e.target.value)}
+                                            className={`absolute opacity-0 left-0 w-full h-full ${!noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                        />
+                                        Access
+                                    </label>
+                                </div>
+                                <div className="relative w-full text-center">
+                                    <label
+                                        htmlFor="public"
+                                        className={`cursor-pointer block px-4 py-2 text-sm rounded-e-lg transition-all ${status === 'public' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${!noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    >
+                                        <input
+                                            disabled={!noteOwner}
+                                            type="radio"
+                                            id="public"
+                                            name="status"
+                                            value="public"
+                                            checked={status === 'public'}
+                                            onChange={(e) => setStatus(e.target.value)}
+                                            className={`absolute opacity-0 left-0 w-full h-full ${!noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                        />
+                                        Public
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                Editable
+                            </label>
+                            <div className="flex items-center justify-between border-1 border-zinc-700 rounded-lg">
+                                <div className="relative w-full text-center">
+                                    <label
+                                        title='Only you can edit'
+                                        htmlFor="editable"
+                                        className={`cursor-pointer block px-4 py-2 text-sm rounded-s-lg transition-all  ${editable === 'me' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${!noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    >
+                                        <input
+                                            disabled={!noteOwner}
+                                            type="radio"
+                                            id="editable"
+                                            name="editable"
+                                            value="me"
+                                            checked={editable === 'me'}
+                                            onChange={(e) => setEditable(e.target.value)}
+                                            className={`absolute opacity-0 left-0 w-full h-full ${!noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                        />
+                                        Only Me
+                                    </label>
+                                </div>
+                                <div className="relative w-full text-center">
+                                    <label
+                                        title='User in access list can edit'
+                                        htmlFor="editable"
+                                        className={`block px-4 py-2 text-sm transition-all  ${editable === 'access' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${status === 'private' || !noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    >
+                                        <input
+                                            disabled={!noteOwner || status === 'private'}
+                                            type="radio"
+                                            id="editable"
+                                            name="editable"
+                                            value="access"
+                                            checked={editable === 'access'}
+                                            onChange={(e) => setEditable(e.target.value)}
+                                            className={`absolute opacity-0 left-0 w-full h-full ${status === 'private' || !noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                        />
+                                        Have Access
+                                    </label>
+                                </div>
+                                <div className="relative w-full text-center">
+                                    <label
+                                        title={` ${status === 'private' ? 'turn status to public to enable this' : 'Everyone with Link can edit'}`}
+                                        htmlFor="nonEditable"
+                                        className={`block px-4 py-2 text-sm rounded-e-lg transition-all ${editable === 'everyone' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${status === 'private' || !noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    >
+                                        <input
+                                            disabled={!noteOwner || status === 'private'}
+                                            type="radio"
+                                            id="nonEditable"
+                                            name="editable"
+                                            value="everyone"
+                                            checked={editable === 'everyone'}
+                                            onChange={(e) => setEditable(e.target.value)}
+                                            className={`absolute opacity-0 right-0 w-full h-full ${status === 'private' || !noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                        />
+                                        Have Link
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                Access Users
+                            </label>
+                            {/* {editable !== 'me' && ( */}
+                            <div className="relative" ref={userSearchRef}>
+                                <div className={`flex flex-wrap max-h-14 overflow-y-auto custom-scrollbar gap-2 ${selectedUsers.length > 0 ? 'mb-2' : ''}`}>
+                                    {selectedUsers.map(userId => {
+                                        const user = mockUsers.find(u => u.id === userId);
+                                        return (
+                                            <div key={userId} title={user?.email} className={`flex items-center gap-1 bg-zinc-800 px-2 py-1 rounded-md ${editable === 'me' ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                <span className="text-sm text-zinc-300">{user?.name}</span>
+                                                <button
+                                                    disabled={!noteOwner || editable === 'me'}
+                                                    title='Remove User'
+                                                    onClick={() => handleRemoveUser(userId)}
+                                                    className="text-zinc-400 hover:text-zinc-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <FaTimes />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {noteOwner && (
+                                    <input
+                                        type="text"
+                                        disabled={editable === 'me'}
+                                        placeholder="Search users..."
+                                        value={searchUserQuery}
+                                        onChange={(e) => handleSearch(e.target.value)}
+                                        onFocus={() => setShowUserSearch(true)}
+                                        className="w-full px-3 py-2 rounded-lg focus:ring-2 bg-zinc-800 border border-zinc-700 focus:ring-zinc-500 focus:border-zinc-500 focus:bg-zinc-700 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    />
+                                )}
+                                {showUserSearch && searchUserResults.length > 0 && (
+                                    <div className="absolute z-50 w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-md shadow-lg max-h-40 overflow-y-auto custom-scrollbar">
+                                        {searchUserResults.map(user => (
+                                            <div
+                                                key={user.id}
+                                                className="px-3 py-2 hover:bg-zinc-800 cursor-pointer flex items-center justify-between"
+                                                onClick={() => handleSelectUser(user.id)}
+                                            >
+                                                <div>
+                                                    <p className="text-sm text-zinc-300">{user.name}</p>
+                                                    <p className="text-xs text-zinc-500">{user.email}</p>
+                                                </div>
+                                                {selectedUsers.includes(user.id) && (
+                                                    // <span className="text-green-400">✓</span>
+                                                    <FaCheck className="text-green-400" />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            {/* )} */}
+                        </div>
+                    </div>
+                    {noteModalError && (
+                        <p className="text-red-400 text-sm">
+                            {noteModalError}
+                        </p>
+                    )}
+                    {noteOwner && (
+                        <div className="flex justify-end gap-1">
                             <button
                                 type="button"
-                                onClick={() => setShowNoteModalAction(false)}
-                                className="text-zinc-400 hover:text-white cursor-pointer"
+                                onClick={() => closeNoteModal()}
+                                className="px-4 py-2 text-sm text-zinc-300 hover:text-white cursor-pointer"
                             >
-                                <BsXLg />
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-4 py-2 text-sm bg-zinc-700 text-white rounded-md hover:bg-zinc-600 cursor-pointer"
+                            >
+                                {isEditMode ? 'Save Changes' : 'Create Note'}
                             </button>
                         </div>
-                        <form className="space-y-4" onSubmit={isEditMode ? handleUpdateNote : handleCreateNote}>
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                    Title
-                                </label>
-                                <input
-                                    type="text"
-                                    className="w-full px-3 py-2 rounded-lg focus:ring-2 bg-zinc-800 border border-zinc-700 focus:ring-zinc-500 focus:border-zinc-500 focus:bg-zinc-700 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    placeholder="Enter note title"
-                                    name="title"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    required
-                                    disabled={!noteOwner}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                    Status
-                                </label>
-                                <div>
-                                    <div className="flex items-center justify-between border-1 border-zinc-700 rounded-lg">
-                                        <div className="relative w-full text-center">
-                                            <label
-                                                htmlFor="private"
-                                                className={`cursor-pointer block px-4 py-2 text-sm rounded-s-lg transition-all ${status === 'private' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${!noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <input
-                                                    disabled={!noteOwner}
-                                                    type="radio"
-                                                    id="private"
-                                                    name="status"
-                                                    value="private"
-                                                    checked={status === 'private'}
-                                                    onChange={(e) => {
-                                                        setStatus(e.target.value)
-                                                        setEditable('me')
-                                                    }}
-                                                    className={`absolute opacity-0 right-0 w-full h-full ${!noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                                />
-                                                Private
-                                            </label>
-                                        </div>
-                                        <div className="relative w-full text-center">
-                                            <label
-                                                htmlFor="access"
-                                                className={`cursor-pointer block px-4 py-2 text-sm transition-all ${status === 'access' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${!noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <input
-                                                    disabled={!noteOwner}
-                                                    type="radio"
-                                                    id="access"
-                                                    name="status"
-                                                    value="access"
-                                                    checked={status === 'access'}
-                                                    onChange={(e) => setStatus(e.target.value)}
-                                                    className={`absolute opacity-0 left-0 w-full h-full ${!noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                                />
-                                                Access
-                                            </label>
-                                        </div>
-                                        <div className="relative w-full text-center">
-                                            <label
-                                                htmlFor="public"
-                                                className={`cursor-pointer block px-4 py-2 text-sm rounded-e-lg transition-all ${status === 'public' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${!noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <input
-                                                    disabled={!noteOwner}
-                                                    type="radio"
-                                                    id="public"
-                                                    name="status"
-                                                    value="public"
-                                                    checked={status === 'public'}
-                                                    onChange={(e) => setStatus(e.target.value)}
-                                                    className={`absolute opacity-0 left-0 w-full h-full ${!noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                                />
-                                                Public
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                        Editable
-                                    </label>
-                                    <div className="flex items-center justify-between border-1 border-zinc-700 rounded-lg">
-                                        <div className="relative w-full text-center">
-                                            <label
-                                                title='Only you can edit'
-                                                htmlFor="editable"
-                                                className={`cursor-pointer block px-4 py-2 text-sm rounded-s-lg transition-all  ${editable === 'me' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${!noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <input
-                                                    disabled={!noteOwner}
-                                                    type="radio"
-                                                    id="editable"
-                                                    name="editable"
-                                                    value="me"
-                                                    checked={editable === 'me'}
-                                                    onChange={(e) => setEditable(e.target.value)}
-                                                    className={`absolute opacity-0 left-0 w-full h-full ${!noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                                />
-                                                Only Me
-                                            </label>
-                                        </div>
-                                        <div className="relative w-full text-center">
-                                            <label
-                                                title='User in access list can edit'
-                                                htmlFor="editable"
-                                                className={`block px-4 py-2 text-sm transition-all  ${editable === 'access' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${status === 'private' || !noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <input
-                                                    disabled={!noteOwner || status === 'private'}
-                                                    type="radio"
-                                                    id="editable"
-                                                    name="editable"
-                                                    value="access"
-                                                    checked={editable === 'access'}
-                                                    onChange={(e) => setEditable(e.target.value)}
-                                                    className={`absolute opacity-0 left-0 w-full h-full ${status === 'private' || !noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                                />
-                                                Have Access
-                                            </label>
-                                        </div>
-                                        <div className="relative w-full text-center">
-                                            <label
-                                                title={` ${status === 'private' ? 'turn status to public to enable this' : 'Everyone with Link can edit'}`}
-                                                htmlFor="nonEditable"
-                                                className={`block px-4 py-2 text-sm rounded-e-lg transition-all ${editable === 'everyone' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} ${status === 'private' || !noteOwner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <input
-                                                    disabled={!noteOwner || status === 'private'}
-                                                    type="radio"
-                                                    id="nonEditable"
-                                                    name="editable"
-                                                    value="everyone"
-                                                    checked={editable === 'everyone'}
-                                                    onChange={(e) => setEditable(e.target.value)}
-                                                    className={`absolute opacity-0 right-0 w-full h-full ${status === 'private' || !noteOwner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                                />
-                                                Have Link
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                        Access Users
-                                    </label>
-                                    {/* {editable !== 'me' && ( */}
-                                    <div className="relative" ref={userSearchRef}>
-                                        <div className={`flex flex-wrap max-h-14 overflow-y-auto custom-scrollbar gap-2 ${selectedUsers.length > 0 ? 'mb-2' : ''}`}>
-                                            {selectedUsers.map(userId => {
-                                                const user = mockUsers.find(u => u.id === userId);
-                                                return (
-                                                    <div key={userId} title={user?.email} className={`flex items-center gap-1 bg-zinc-800 px-2 py-1 rounded-md ${editable === 'me' ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                                        <span className="text-sm text-zinc-300">{user?.name}</span>
-                                                        <button
-                                                            disabled={!noteOwner || editable === 'me'}
-                                                            title='Remove User'
-                                                            onClick={() => handleRemoveUser(userId)}
-                                                            className="text-zinc-400 hover:text-zinc-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        >
-                                                            <FaTimes />
-                                                        </button>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        {noteOwner && (
-                                            <input
-                                                type="text"
-                                                disabled={editable === 'me'}
-                                                placeholder="Search users..."
-                                                value={searchUserQuery}
-                                                onChange={(e) => handleSearch(e.target.value)}
-                                                onFocus={() => setShowUserSearch(true)}
-                                                className="w-full px-3 py-2 rounded-lg focus:ring-2 bg-zinc-800 border border-zinc-700 focus:ring-zinc-500 focus:border-zinc-500 focus:bg-zinc-700 text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            />
-                                        )}
-                                        {showUserSearch && searchUserResults.length > 0 && (
-                                            <div className="absolute z-50 w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-md shadow-lg max-h-40 overflow-y-auto custom-scrollbar">
-                                                {searchUserResults.map(user => (
-                                                    <div
-                                                        key={user.id}
-                                                        className="px-3 py-2 hover:bg-zinc-800 cursor-pointer flex items-center justify-between"
-                                                        onClick={() => handleSelectUser(user.id)}
-                                                    >
-                                                        <div>
-                                                            <p className="text-sm text-zinc-300">{user.name}</p>
-                                                            <p className="text-xs text-zinc-500">{user.email}</p>
-                                                        </div>
-                                                        {selectedUsers.includes(user.id) && (
-                                                            // <span className="text-green-400">✓</span>
-                                                            <FaCheck className="text-green-400" />
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    {/* )} */}
-                                </div>
-                            </div>
-                            {noteModalError && (
-                                <p className="text-red-400 text-sm">
-                                    {noteModalError}
-                                </p>
-                            )}
-                            {noteOwner && (
-                                <div className="flex justify-end gap-1">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowNoteModalAction(false)}
-                                        className="px-4 py-2 text-sm text-zinc-300 hover:text-white cursor-pointer"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="px-4 py-2 text-sm bg-zinc-700 text-white rounded-md hover:bg-zinc-600 cursor-pointer"
-                                    >
-                                        {isEditMode ? 'Save Changes' : 'Create Note'}
-                                    </button>
-                                </div>
-                            )}
-                        </form>
-                    </div>
-                </div>
-            )}
+                    )}
+                </form>
+            </Modal>
         </>
     );
 };

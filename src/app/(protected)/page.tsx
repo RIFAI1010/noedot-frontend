@@ -1,7 +1,7 @@
 'use client'
 import { axiosInstance } from '@/utils/config';
 import React, { useEffect, useState } from 'react';
-import { FaPlus, FaStar } from 'react-icons/fa6';
+import { FaAngleDown, FaAngleUp, FaPlus, FaStar } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
 
 // const notes = [
@@ -47,9 +47,11 @@ const formatDate = (dateString: string) => {
 export default function Home() {
     const router = useRouter();
     const [noteType, setNoteType] = useState<'my' | 'shared' | 'favorite'>('my');
+    const [noteTagFilter, setNoteTagFilter] = useState<'all' | 'todo' | 'progress' | 'complete'>('all');
     const [notesRecentlyOpened, setNotesRecentlyOpened] = useState<[]>([]);
     const [notes, setNotes] = useState<[]>([]);
-    
+    const [tagFilterOpen, setTagFilterOpen] = useState(false);
+
     const handleNoteClick = (noteId: string) => {
         router.push(`/note/${noteId}`);
     };
@@ -66,7 +68,7 @@ export default function Home() {
 
     const fetchNotes = async () => {
         try {
-            const response = await axiosInstance.get('/note?filter=' + noteType);
+            const response = await axiosInstance.get(`/note?filter=${noteType}&tag=${noteTagFilter === 'all' ? '' : noteTagFilter}`);
             const data = await response.data;
             setNotes(data);
         } catch (error) {
@@ -76,7 +78,7 @@ export default function Home() {
 
     useEffect(() => {
         fetchNotes();
-    }, [noteType]);
+    }, [noteType, noteTagFilter]);
     
     useEffect(() => {
         fetchRecentlyOpenedNotes();
@@ -173,6 +175,66 @@ export default function Home() {
                     </label>
                 </div>
             </div>
+            {/* Dropdown Tag Filter */}
+            <div className="relative inline-block text-left justify-items-end w-full">
+                <div className="flex items-center w-fit ">
+                    <button
+                        type="button"
+                        className="inline-flex justify-center gap-2 items-center w-full rounded-md border border-zinc-700 shadow-sm px-4 py-2 bg-zinc-800 text-sm font-medium text-zinc-200 hover:bg-zinc-700 cursor-pointer"
+                        id="tag-filter-dropdown"
+                        aria-haspopup="true"
+                        aria-expanded="true"
+                        onClick={() => setTagFilterOpen(!tagFilterOpen)}
+                    >
+                        {/* {tagFilterOpen ? 'Hide tags' : 'Show tags'} */}
+                        {noteTagFilter.charAt(0).toUpperCase() + noteTagFilter.slice(1)}
+                        {tagFilterOpen ? <FaAngleUp /> : <FaAngleDown />}
+                    </button>
+                </div>
+
+                {tagFilterOpen && (
+                    <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-zinc-800 ring-1 ring-black ring-opacity-5">
+                        <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="tag-filter-dropdown">
+                            <a
+                                href="#"
+                                className={`block px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700 ${noteTagFilter === 'all' ? 'bg-zinc-700' : ''}`}
+                                onClick={() => {setNoteTagFilter('all')
+                                    setTagFilterOpen(false)
+                                }}
+                            >
+                                All
+                            </a>
+                            <a
+                                href="#"
+                                className={`block px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700 ${noteTagFilter === 'todo' ? 'bg-zinc-700' : ''}`}
+                                onClick={() => {setNoteTagFilter('todo')
+                                    setTagFilterOpen(false)
+                                }}
+                            >
+                                Todo
+                            </a>
+                            <a
+                                href="#"
+                                className={`block px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700 ${noteTagFilter === 'progress' ? 'bg-zinc-700' : ''}`}
+                                onClick={() => {setNoteTagFilter('progress')
+                                    setTagFilterOpen(false)
+                                }}
+                            >
+                                Progress
+                            </a>
+                            <a
+                                href="#"
+                                className={`block px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700 ${noteTagFilter === 'complete' ? 'bg-zinc-700' : ''}`}
+                                onClick={() => {setNoteTagFilter('complete')
+                                    setTagFilterOpen(false)
+                                }}
+                            >
+                                Complete
+                            </a>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Grid Notes */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
@@ -191,7 +253,14 @@ export default function Home() {
                         <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-2 line-clamp-2 sm:line-clamp-3">{note.content}</p>
                         <div className="mt-2 flex items-center justify-between text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
                             <span>Last modified: {note.updatedAt ? formatDate(note.updatedAt) : ''}</span>
-                            <span className="px-2 py-0.5 bg-zinc-700 rounded-full text-zinc-300">{note.status}</span>
+                            <div className='space-x-2'>
+                                <span className={`px-2 py-0.5  ${
+                            note.tags === 'progress' ? 'bg-sky-700' :
+                            note.tags === 'complete' ? 'bg-emerald-700' :
+                            'bg-zinc-700'
+                        } rounded-full text-zinc-300`}>{note.tags}</span>
+                                <span className="px-2 py-0.5 bg-zinc-700 rounded-full text-zinc-300">{note.status}</span>
+                            </div>
                         </div>
                     </div>
                 ))}

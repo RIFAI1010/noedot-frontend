@@ -15,6 +15,20 @@ import { connectSocket, disconnectSocket, getSocket } from '@/utils/socketClient
 import { FaRegArrowAltCircleDown, FaRegArrowAltCircleUp } from 'react-icons/fa'
 import { FaRegBookmark, FaBookmark } from 'react-icons/fa6'
 import { TbCirclesRelation } from "react-icons/tb";
+import Modal from '@/components/Modal'
+import { useModal } from '@/hooks/useModal'
+
+const showNotification = (message?: string, type?: 'success' | 'error') => {
+    if (typeof window !== 'undefined') {
+        const event = new CustomEvent('showNotification', {
+            detail: {
+                message: message || 'An unexpected error occurred',
+                type: type || 'error'
+            }
+        });
+        window.dispatchEvent(event);
+    }
+};
 
 
 const NotePage = () => {
@@ -38,11 +52,16 @@ const NotePage = () => {
     const [relationFilter, setRelationFilter] = useState<'my' | 'shared' | 'favorite'>('my')
     const [relationComponents, setRelationComponents] = useState<any[]>([])
     const relationModalRef = useRef<HTMLDivElement>(null)
+    const { isOpen: isTagModalOpen, openModal: openTagModal, closeModal: closeTagModal } = useModal()
+    const [tag, setTag] = useState('')
+    const [editTag, setEditTag] = useState('')
+
     // fetch note
     const fetchNote = useCallback(async () => {
         try {
             const response = await axiosInstance.get(`/note/${id}`)
             setEditable(response.data.canEdit)
+            setTag(response.data.tags)
             setTitle(response.data.title)
             setBlocks(response.data.noteBlocks)
             setNoteBookmark(response.data.favorite)
@@ -90,6 +109,9 @@ const NotePage = () => {
         socket.emit('joinNote', { noteId: id });
         socket.on(`joinedNote_${id}`, (data) => {
             console.log('Joined note:', data);
+            if (data.socketAction === 'updateNoteTag') {
+                setTag(data.tags)
+            }
             if (data.title) {
                 setTitle(data.title);
             }
@@ -187,7 +209,7 @@ const NotePage = () => {
             console.error('Error adding table:', error)
         }
     }
-    
+
     const handleAddDocument = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
         try {
@@ -377,8 +399,113 @@ const NotePage = () => {
         }
     }
 
+    const handleEditTag  = () => {
+        setEditTag(tag)
+        openTagModal()
+    }
+
+    const hanldeTagUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        try {
+            await axiosInstance.put(`/note/${id}/tag`, {
+                tag: editTag
+            });
+            closeTagModal();
+            showNotification('Note tag updated successfully', 'success');
+        } catch (error: any) {
+            if (error.response?.data?.message) {
+            } else {
+            }
+        }
+    }
+
     return (
         <div className="document-page max-w-[1000px] mx-auto px-4 mb-30">
+            <Modal
+                isOpen={isTagModalOpen}
+                onClose={closeTagModal}
+                title="Edit Label"
+                className="w-[400px]"
+            >
+                <form className="space-y-4" onSubmit={hanldeTagUpdate}>
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-300 mb-1">
+                            Tag
+                        </label>
+                        <div className="flex items-center justify-between border-1 border-zinc-700 rounded-lg">
+                            <div className="relative w-full text-center">
+                                <label
+                                    title="todo"
+                                    htmlFor="tag"
+                                    className={`cursor-pointer block px-4 py-2 text-sm rounded-s-lg transition-all  ${editTag === 'todo' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'} cursor-pointer `}
+                                >
+                                    <input
+                                        type="radio"
+                                        id="tag"
+                                        name="tag"
+                                        value="todo"
+                                        checked={editTag === 'todo'}
+                                        onChange={(e) => setEditTag(e.target.value)}
+                                        className={`absolute opacity-0 left-0 w-full h-full cursor-pointer`}
+                                    />
+                                    Todo
+                                </label>
+                            </div>
+                            <div className="relative w-full text-center">
+                                <label
+                                    title="progress"
+                                    htmlFor="tag"
+                                    className={`block px-4 py-2 text-sm transition-all  ${editTag === 'progress' ? 'bg-sky-700 text-white hover:bg-sky-600' : 'text-zinc-500 hover:text-white hover:bg-sky-800'} cursor-pointer`}
+                                >
+                                    <input
+                                        type="radio"
+                                        id="tag"
+                                        name="tag"
+                                        value="progress"
+                                        checked={editTag === 'progress'}
+                                        onChange={(e) => setEditTag(e.target.value)}
+                                        className={`absolute opacity-0 left-0 w-full h-full cursor-pointer`}
+                                    />
+                                    Progress
+                                </label>
+                            </div>
+                            <div className="relative w-full text-center">
+                                <label
+                                    title="compete"
+                                    htmlFor="tag"
+                                    className={`block px-4 py-2 text-sm rounded-e-lg transition-all ${editTag === 'complete' ? 'bg-emerald-700 text-white hover:bg-emerald-600' : 'text-zinc-500 hover:text-white hover:bg-emerald-800'} cursor-pointer`}
+                                >
+                                    <input
+                                        type="radio"
+                                        id="tag"
+                                        name="tag"
+                                        value="complete"
+                                        checked={editTag === 'complete'}
+                                        onChange={(e) => setEditTag(e.target.value)}
+                                        className={`absolute opacity-0 right-0 w-full h-full cursor-pointer`}
+                                    />
+                                    Complete
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-1">
+                        <button
+                            type="button"
+                            onClick={() => closeTagModal()}
+                            className="px-4 py-2 text-sm text-zinc-300 hover:text-white cursor-pointer"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-4 py-2 text-sm bg-zinc-700 text-white rounded-md hover:bg-zinc-600 cursor-pointer"
+                        >
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </Modal>
             <div className="flex items-center justify-between p-4 border-b border-zinc-700 relative">
                 <input
                     type="text"
@@ -395,38 +522,38 @@ const NotePage = () => {
             </div>
             <div className="menu-bar flex justify-between items-center p-2 border-b border-zinc-500 bg-zinc-800 rounded-b-lg">
                 <div className="flex gap-2">
-                <div className="flex gap-2">
-                    <button
-                        onClick={handlePositionModalOpen}
-                        className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
-                        title="Edit Position"
-                    >
-                        <GoStack size={16} />
-                    </button>
-                </div>
-                <div className="w-[1px] my-1 bg-zinc-500" />
-                <div className="flex gap-2">
-                    <button
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handlePositionModalOpen}
+                            className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
+                            title="Edit Position"
+                        >
+                            <GoStack size={16} />
+                        </button>
+                    </div>
+                    <div className="w-[1px] my-1 bg-zinc-500" />
+                    <div className="flex gap-2">
+                        <button
                             onClick={handleAddDocument}
-                        className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
-                        title="Document"
-                    >
-                        <MdEditNote size={16} />
-                    </button>
-                    <button
-                        onClick={handleAddTable}
-                        className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
-                        title="Table"
-                    >
-                        <CiViewTable size={16} />
-                    </button>
-                    <button
-                        className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
-                        title="Gallery"
-                    >
-                        <IoMdImages size={16} />
-                    </button>
-                </div>
+                            className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
+                            title="Document"
+                        >
+                            <MdEditNote size={16} />
+                        </button>
+                        <button
+                            onClick={handleAddTable}
+                            className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
+                            title="Table"
+                        >
+                            <CiViewTable size={16} />
+                        </button>
+                        <button
+                            className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
+                            title="Gallery"
+                        >
+                            <IoMdImages size={16} />
+                        </button>
+                    </div>
                     <div className="w-[1px] my-1 bg-zinc-500" />
                     <div className="flex gap-2">
                         <button
@@ -439,12 +566,22 @@ const NotePage = () => {
                     </div>
                 </div>
                 <div className="flex gap-2">
+                    <label
+                        className={`status-label py-1 px-2 rounded-md text-white cursor-pointer ${
+                            tag === 'progress' ? 'bg-sky-700 hover:bg-sky-500' :
+                            tag === 'complete' ? 'bg-emerald-700 hover:bg-emerald-500' :
+                            'bg-zinc-700 hover:bg-zinc-500'
+                        }`}
+                        onClick={handleEditTag}
+                    >
+                        {tag || '....'}
+                    </label>
                     <button
                         className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
                         title="Save to Bookmark"
                         onClick={handleBookmark}
                     >
-                        {noteBookmark ?  <FaBookmark size={16} /> : <FaRegBookmark size={16} />}
+                        {noteBookmark ? <FaBookmark size={16} /> : <FaRegBookmark size={16} />}
                     </button>
                 </div>
             </div>

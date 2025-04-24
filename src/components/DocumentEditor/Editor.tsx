@@ -22,7 +22,7 @@ import DraggableItem from './DraggableItem'
 import { CustomComponentNode } from './CustomComponentNode'
 import { axiosInstance } from '@/utils/config'
 import { getSocket } from '@/utils/socketClient'
-import { ModalAlert } from '../Note/modalAlert'
+import { ModalAlert, ModalProps } from '../Note/modalAlert'
 import { Editor as TiptapEditor } from '@tiptap/core'
 import { TiDelete } from 'react-icons/ti'
 
@@ -61,7 +61,11 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
         type: '', // 'row' or 'column'
         id: '',
         title: '',
-        message: ''
+        message: '',
+        confirmButtonText: '',
+        cancelButtonText: '',
+        confirmButtonColor: ''
+
     })
     const [isMounted, setIsMounted] = useState(false)
     const editorRef = useRef<TiptapEditor | null>(null)
@@ -216,7 +220,10 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
             type: 'document',
             id: id,
             title: 'Delete Document',
-            message: 'Are you sure you want to delete this document? This action cannot be undone.'
+            message: 'Are you sure you want to delete this document? This action cannot be undone.',
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: 'danger'
         })
     }
 
@@ -364,6 +371,9 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
                 onConfirm={handleModalConfirm}
                 title={modalState.title}
                 message={modalState.message}
+                confirmButtonText={modalState.confirmButtonText}
+                cancelButtonText={modalState.cancelButtonText}
+                confirmButtonColor={modalState.confirmButtonColor as ModalProps['confirmButtonColor']}
             />
 
             {loading || documentRelationAccessDenied.isAccessDenied ? (

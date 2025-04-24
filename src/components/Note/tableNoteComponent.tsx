@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { TiDelete } from "react-icons/ti";
 import { useRouter } from "next/navigation";
 import { getSocket } from "@/utils/socketClient";
-import { ModalAlert } from "./modalAlert";
+import { ModalAlert, ModalProps } from "./modalAlert";
 
 
 interface Col {
@@ -99,7 +99,10 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
         type: '', // 'row' or 'column'
         id: '',
         title: '',
-        message: ''
+        message: '',
+        confirmButtonText: '',
+        cancelButtonText: '',
+        confirmButtonColor: ''
     })
 
     // Update editableNote ketika prop noteEditable berubah
@@ -344,7 +347,10 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
             type: 'column',
             id: colId,
             title: 'Delete Column',
-            message: 'Are you sure you want to delete this column? This action cannot be undone.'
+            message: 'Are you sure you want to delete this column? This action cannot be undone.',
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: 'danger'
         })
     }
 
@@ -363,7 +369,10 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
             type: 'row',
             id: rowId,
             title: 'Delete Row',
-            message: 'Are you sure you want to delete this row? This action cannot be undone.'
+            message: 'Are you sure you want to delete this row? This action cannot be undone.',
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: 'danger'
         })
     }
     const handleAddRowData = async (rowId: string, colId: string) => {
@@ -415,7 +424,10 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
             type: 'table',
             id: id,
             title: 'Delete Table',
-            message: 'Are you sure you want to delete this table? This action cannot be undone.'
+            message: 'Are you sure you want to delete this table? This action cannot be undone.',
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: 'danger'
         })
     }
 
@@ -453,6 +465,9 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                 onConfirm={handleModalConfirm}
                 title={modalState.title}
                 message={modalState.message}
+                confirmButtonText={modalState.confirmButtonText}
+                cancelButtonText={modalState.cancelButtonText}
+                confirmButtonColor={modalState.confirmButtonColor as ModalProps['confirmButtonColor']}
             />
             {loading || tableRelationAccessDenied.isAccessDenied ? (
 
