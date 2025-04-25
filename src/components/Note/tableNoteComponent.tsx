@@ -526,7 +526,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                         {saving && <span className="saving-indicator absolute right-0">Saving...</span>}
                     </div>
                     <div>
-                        <div className="relative overflow-x-auto shadow-md sm:rounded-lg custom-scrollbar max-w-[100vw] -mx-4 sm:mx-0">
+                        <div className="relative overflow-x-auto custom-scrollbar shadow-md sm:rounded-lg max-w-[100vw] mx-2 sm:mx-0">
                             <table className="w-full text-sm text-left rtl:text-right text-zinc-500 dark:text-zinc-400 border-3 border-zinc-700">
                                 <thead className="text-xs text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
                                     <tr className="">

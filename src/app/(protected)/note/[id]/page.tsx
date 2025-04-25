@@ -17,6 +17,7 @@ import { FaRegBookmark, FaBookmark } from 'react-icons/fa6'
 import { TbCirclesRelation } from "react-icons/tb";
 import Modal from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
+import BoardNoteComponent from '@/components/Note/boardNoteComponent'
 
 const showNotification = (message?: string, type?: 'success' | 'error') => {
     if (typeof window !== 'undefined') {
@@ -847,6 +848,7 @@ const NotePage = () => {
                             />
                         )
                     })}
+                    <BoardNoteComponent />
                 </div>
             </div>
         </div>
