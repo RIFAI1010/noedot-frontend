@@ -1,5 +1,6 @@
 // utils/componentRegistry.ts
 import DocumentEditor from "@/components/DocumentEditor/Editor";
+import BoardNoteComponent from "@/components/Note/boardNoteComponent";
 import TableBlock from "@/components/Note/tableNoteComponent"
 
 export interface BlockProps {
@@ -24,5 +25,6 @@ export const blockRegistry: Record<
     React.FC<BlockProps>
 > = {
     table: TableBlock,
-    document: DocumentEditor
+    document: DocumentEditor,
+    board: BoardNoteComponent
 }

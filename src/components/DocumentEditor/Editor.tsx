@@ -69,41 +69,47 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
     })
     const [isMounted, setIsMounted] = useState(false)
     const editorRef = useRef<TiptapEditor | null>(null)
+    const [isDocumentLoaded, setIsDocumentLoaded] = useState(false);
 
     useEffect(() => {
         setEditableNote(noteEditable)
     }, [noteEditable])
 
+    useEffect(() => {
+        if (documentId) {
+            fetchDocument();
+        }
+    }, [documentId]);
+
     const fetchDocument = async () => {
-        setLoading(true)
+        setLoading(true);
         try {
-            const response = await axiosInstance.get(`/document/${id}`)
+            const response = await axiosInstance.get(`/document/${id}`);
             setDocumentRelationAccessDenied({
                 isAccessDenied: false,
                 message: ''
-            })
-            setDocumentId(response.data.id)
-            setEditorHeight(response.data.height)
-            setEditable(response.data.canEdit)
-            setIsSourceNote(response.data.isSourceNote)
-            setContent(response.data.content)
+            });
+            setDocumentId(response.data.id);
+            setEditorHeight(response.data.height);
+            setEditable(response.data.canEdit);
+            setIsSourceNote(response.data.isSourceNote);
+            setContent(response.data.content);
+            setIsDocumentLoaded(true);
             if (!response.data.isSourceNote) {
-                const sourceNoteResponse = await axiosInstance.get(`/note/${response.data.sourceNoteId}`)
-                setSourceNote(sourceNoteResponse.data)
+                const sourceNoteResponse = await axiosInstance.get(`/note/${response.data.sourceNoteId}`);
+                setSourceNote(sourceNoteResponse.data);
             }
         } catch (error: any) {
             if (error.response.data.serverCode === 'DOCUMENT_RELATION_ACCESS_DENIED') {
                 setDocumentRelationAccessDenied({
                     isAccessDenied: true,
                     message: error.response.data.message
-                })
+                });
             }
+        } finally {
+            setLoading(false);
         }
-        finally {
-            setLoading(false)
-        }
-
-    }
+    };
 
     useEffect(() => {
         if (!documentId) return;
@@ -313,6 +319,7 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
         }
     }, [heightSaveTimeout])
 
+
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -334,11 +341,11 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
             OrderedList,
         ],
         content: content,
-        editable: true,
+        editable: (editableNote && editable),
         onUpdate: ({ editor }) => {
             handleContentChange(editor.getHTML())
         }
-    })
+    }, [isDocumentLoaded]);
 
     // Update content dari props jika berubah
     useEffect(() => {
@@ -363,8 +370,14 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
         return null
     }
 
+    if (!isDocumentLoaded) {
+        return <div>Loading...</div>;
+    }
+
     return (
         <>
+        {/* debug */}
+            {/* {editable ? 'editable' : 'not editable'} */}
             <ModalAlert
                 isOpen={modalState.isOpen}
                 onClose={handleModalClose}
@@ -434,7 +447,7 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
                             />
                         </div>
                     <div className="relative">
-                        {(editableNote || editable) && (
+                        {(editableNote && editable) && (
                             <>
                                 {/* {editorHeight} */}
                                 <MenuBar editor={editor} />
@@ -445,7 +458,7 @@ const DocumentEditor = ({ id, noteId, noteEditable, onComponentDeleted }: Editor
                                 editor={editor}
                                 className="editor-content bg-zinc-900 shadow-md p-4 overflow-y-auto border-3 border-zinc-700" style={{ minHeight: `${editorHeight}px` }}
                             />
-                            {(editableNote || editable) && (
+                            {(editableNote && editable) && (
                                 <div
                                     ref={resizeHandleRef}
                                     className="absolute bottom-0 left-0 right-0 h-2 bg-zinc-700 hover:bg-zinc-600 cursor-row-resize flex items-center justify-center"

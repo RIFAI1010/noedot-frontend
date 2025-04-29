@@ -606,6 +606,14 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                                             </button>
                                         </div>
                                         <div className="flex items-center justify-between">
+                                            <p
+                        className={`rounded-md group-hover:opacity-100 text-white text-xs px-1 ${note.dateStatus === 'progress' ? 'bg-sky-700 hover:bg-sky-500' :
+                            note.dateStatus === 'complete' ? 'bg-emerald-700 hover:bg-emerald-500' : note.dateStatus === 'confirm to complete' ? 'bg-yellow-700 hover:bg-yellow-500' :
+                                    'bg-zinc-700 hover:bg-zinc-500'
+                            } ${activeNoteOptions === note.id ? (selectedNoteId === note.id && 'opacity-200') : (selectedNoteId === note.id ? 'opacity-100' : 'opacity-0')}`} 
+                    >
+                        {note.dateStatus}
+                    </p>
                                             <p className={`group-hover:opacity-100 transition-opacity ${activeNoteOptions === note.id ? (selectedNoteId === note.id && 'opacity-200') : (selectedNoteId === note.id ? 'opacity-100' : 'opacity-0')} text-xs text-zinc-500`}>{note.status}</p>
                                             <p className={`group-hover:opacity-100 transition-opacity ${activeNoteOptions === note.id ? (selectedNoteId === note.id && 'opacity-200') : (selectedNoteId === note.id ? 'opacity-100' : 'opacity-0')} text-xs text-zinc-500`}>{note.editable}</p>
                                         </div>

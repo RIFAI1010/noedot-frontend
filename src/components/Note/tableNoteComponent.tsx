@@ -96,7 +96,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
     const [tableId, setTableId] = useState<string>('')
     const [modalState, setModalState] = useState({
         isOpen: false,
-        type: '', // 'row' or 'column'
+        type: '',
         id: '',
         title: '',
         message: '',
@@ -121,6 +121,7 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
             })
             setTableId(response.data.id)
             setEditable(response.data.canEdit)
+            console.log('table can edit: ', response.data.canEdit)
             setIsSourceNote(response.data.isSourceNote)
             if (response.data.name) {
                 setName(response.data.name)
@@ -154,9 +155,10 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
         socket.on(`joinedTable_${tableId}`, (data) => {
             console.log('Joined table:', data);
             if (data.socketAction === 'updateNote') {
-                // if (data.id !== id) {
-                    // setEditable(data.canEdit)
-                // }
+                if (data.id === noteId) {
+                // setEditableNote(data.canEdit)
+                setEditable(data.canEdit)
+                }
             }
             if (data.socketAction === 'updateTableName') {
                 setName(data.name)
@@ -173,10 +175,10 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                     prevRows.map(r =>
                         r.id === data.newRowData.rowId
                             ? {
-                            ...r,
-                            rowData: [...r.rowData, data.newRowData]
-                        }
-                        : r
+                                ...r,
+                                rowData: [...r.rowData, data.newRowData]
+                            }
+                            : r
                     )
                 )
             }
@@ -190,8 +192,8 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                             }
                         }
                         return row
-                })
-            )
+                    })
+                )
             }
             if (data.socketAction === 'updateCol') {
                 setCols(prevCols =>
@@ -478,205 +480,214 @@ export default function TableBlock({ id, noteId, noteEditable, onComponentDelete
                     </div>
                 ) : (
                     <div className="bg-zinc-800 rounded-lg p-4 flex items-center gap-2">
-                        {(editableNote || editable) &&  (
-                            <button 
-                            className="bg-zinc-700 text-zinc-300 px-2 py-1 rounded-md hover:bg-zinc-600 cursor-pointer"
-                            title="Delete Table"
-                            onClick={() => handleDeleteTable()}
+                        {(editableNote || editable) && (
+                            <button
+                                className="bg-zinc-700 text-zinc-300 px-2 py-1 rounded-md hover:bg-zinc-600 cursor-pointer"
+                                title="Delete Table"
+                                onClick={() => handleDeleteTable()}
                             >
-                            <TiDelete size={16} />
-                        </button>
+                                <TiDelete size={16} />
+                            </button>
                         )}
                         <p className="text-zinc-300 text-lg">{tableRelationAccessDenied.message || 'Table not found'}</p>
                     </div>
                 )
             ) : (
-                <div className="bg-zinc-800 rounded-lg p-4">
-                    {!isSourceNote && sourceNote && (
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <p className="text-zinc-300 text-sm">Table From</p>
-                                <Link href={`/note/${sourceNote.id}`} className="text-blue-500 hover:text-blue-600">
-                                    {sourceNote.title}
-                                </Link>
+                <>
+                {/* debug */}
+                {/* <div>
+                    {editable ? 'editable' : 'not editable'}
+                    <br />
+                    {editableNote ? 'editableNote' : 'not editableNote'}
+                </div> */}
+                <div className='overflow-x-auto max-w-[100vw]'>
+                    <div className="bg-zinc-800 rounded-lg p-4">
+                        {!isSourceNote && sourceNote && (
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                    <p className="text-zinc-300 text-sm">Table From</p>
+                                    <Link href={`/note/${sourceNote.id}`} className="text-blue-500 hover:text-blue-600">
+                                        {sourceNote.title}
+                                    </Link>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                    <div className="flex justify-start items-center mb-4 relative gap-2">
-                        {(editableNote || editable) && (
-                            <button 
-                            className="bg-zinc-700 text-zinc-300 px-2 py-1 rounded-md hover:bg-zinc-600 cursor-pointer"
-                        title="Delete Table"
-                        onClick={() => handleDeleteTable()}
-                        >
-                            <TiDelete size={16} />
-                        </button>
                         )}
-                        <input
-                            type="text"
-                            className="border-none outline-none text-zinc-300 text-lg font-bold w-full bg-transparent shadow-md p-1 rounded-md"
-                            placeholder="Table Name"
-                            value={name ?? ''}
-                            disabled={!editable}
-                            onChange={(e) => {
-                                setName(e.target.value)
-                                saveTable(e.target.value)
-                            }}
-                        />
-                        {saving && <span className="saving-indicator absolute right-0">Saving...</span>}
-                    </div>
-                    <div>
-                        <div className="relative overflow-x-auto custom-scrollbar shadow-md sm:rounded-lg max-w-[100vw] mx-2 sm:mx-0">
-                            <table className="w-full text-sm text-left rtl:text-right text-zinc-500 dark:text-zinc-400 border-3 border-zinc-700">
-                                <thead className="text-xs text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
-                                    <tr className="">
-                                        {cols.map((col) => (
-                                            <th key={col.id} scope="col" className="px-6 py-3 border-r border-zinc-200 group relative">
-                                                <input
-                                                    type="text"
-                                                    className="border-none outline-none bg-transparent text-zinc-300"
-                                                    value={col.title ?? ''}
-                                                    disabled={!editable}
-                                                    placeholder="type column name here..."
-                                                    onChange={(e) => {
-                                                        handleColumnChange(col.id, e.target.value)
-                                                    }}
-                                                />
-                                                {editable && (
-                                                    <button
-                                                        className="text-red-500 hover:text-red-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer absolute right-4"
-                                                        onClick={() => handleDeleteColumn(col.id)}
-                                                        title="Delete Column"
+                        <div className="flex justify-start items-center mb-4 relative gap-2">
+                            {(editableNote) && (
+                                <button
+                                    className="bg-zinc-700 text-zinc-300 px-2 py-1 rounded-md hover:bg-zinc-600 cursor-pointer"
+                                    title="Delete Table"
+                                    onClick={() => handleDeleteTable()}
+                                >
+                                    <TiDelete size={16} />
+                                </button>
+                            )}
+                            <input
+                                type="text"
+                                className="border-none outline-none text-zinc-300 text-lg font-bold w-full bg-transparent shadow-md p-1 rounded-md"
+                                placeholder="Table Name"
+                                value={name ?? ''}
+                                disabled={!(editableNote && editable)}
+                                onChange={(e) => {
+                                    setName(e.target.value)
+                                    saveTable(e.target.value)
+                                }}
+                            />
+                            {saving && <span className="saving-indicator absolute right-0">Saving...</span>}
+                        </div>
+                        <div>
+                            <div className="relative overflow-x-auto custom-scrollbar shadow-md sm:rounded-lg max-w-[100vw] mx-2 sm:mx-0">
+                                <table className="w-full text-sm text-left rtl:text-right text-zinc-500 dark:text-zinc-400 border-3 border-zinc-700">
+                                    <thead className="text-xs text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
+                                        <tr className="">
+                                            {cols.map((col) => (
+                                                <th key={col.id} scope="col" className="px-6 py-3 border-r border-zinc-200 group relative">
+                                                    <input
+                                                        type="text"
+                                                        className="border-none outline-none bg-transparent text-zinc-300"
+                                                        value={col.title ?? ''}
+                                                        disabled={!(editableNote && editable)}
+                                                        placeholder="type column name here..."
+                                                        onChange={(e) => {
+                                                            handleColumnChange(col.id, e.target.value)
+                                                        }}
+                                                    />
+                                                    {(editableNote && editable) && (
+                                                        <button
+                                                            className="text-red-500 hover:text-red-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer absolute right-4"
+                                                            onClick={() => handleDeleteColumn(col.id)}
+                                                            title="Delete Column"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    )}
+                                                </th>
+                                            ))}
+                                            {(editableNote && editable) && (
+                                                <th scope="col" className="px-6 py-3 right-0">
+                                                    <button className="text-xs text-blue-500 hover:text-blue-600 cursor-pointer"
+                                                        onClick={handleAddColumn}
+                                                        title="Add Column"
                                                     >
-                                                        ×
+                                                        +
                                                     </button>
-                                                )}
-                                            </th>
-                                        ))}
-                                        {editable && (
-                                            <th scope="col" className="px-6 py-3 right-0">
-                                                <button className="text-xs text-blue-500 hover:text-blue-600 cursor-pointer"
-                                                    onClick={handleAddColumn}
-                                                    title="Add Column"
-                                                >
-                                                    +
-                                                </button>
-                                            </th>
-                                        )}
-                                    </tr>
-                                </thead>
-                                <tbody className="">
-                                    {rows.map((row) => (
-                                        <tr key={row.id} className="bg-white border-b dark:bg-zinc-900 dark:border-zinc-700 border-zinc-200 relative">
-                                            {cols.map((col) => {
-                                                const rowDataItems = row.rowData.filter(rd => rd.colId === col.id)
-                                                return (
-                                                    <td key={`${row.id}-${col.id}`} className="px-6 py-4 border-r border-zinc-700 group align-top">
-                                                        <div className="flex flex-col gap-1 relative">
-                                                            {rowDataItems.map((rowData, index) => (
-                                                                <div key={`${rowData.id}-${index}`} className="flex items-center gap-2">
-                                                                    <input
-                                                                        type="text"
-                                                                        className="border-none outline-none bg-transparent text-zinc-300"
-                                                                        value={rowData.content ?? ''}
-                                                                        placeholder="type row data here..."
-                                                                        disabled={!editable}
-                                                                        onChange={(e) => {
-                                                                            handleRowDataChange(row.id, col.id, e.target.value, rowData.id)
-                                                                        }}
-                                                                    />
-                                                                    {editable && rowDataItems.length > 1 && (
-                                                                        <button
-                                                                            className="text-red-500 hover:text-red-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer"
-                                                                            onClick={() => handleDeleteRowData(row.id, rowData.id)}
-                                                                            title="Delete Row Data"
-                                                                        >
-                                                                            ×
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                            {editable && rowDataItems.length === 0 && (
-                                                                <div className="flex items-center gap-2">
-                                                                    <input
-                                                                        type="text"
-                                                                        className="border-none outline-none bg-transparent text-zinc-300"
-                                                                        placeholder="type row data here..."
-                                                                        disabled={!editable}
-                                                                        title="Add Row Data"
-                                                                        onChange={(e) => {
-                                                                            const value = e.target.value
-                                                                            if (contentSaveTimeout) {
-                                                                                clearTimeout(contentSaveTimeout)
-                                                                            }
-                                                                            const timeout = setTimeout(async () => {
-                                                                                if (value.trim() !== '') {
-                                                                                    const response = await axiosInstance.post(`/table/${tableId}/row-data`, {
-                                                                                        rowId: row.id,
-                                                                                        colId: col.id,
-                                                                                        content: value
-                                                                                    })
-                                                                                    // setRows(prevRows =>
-                                                                                    //     prevRows.map(r =>
-                                                                                    //         r.id === row.id
-                                                                                    //             ? {
-                                                                                    //                 ...r,
-                                                                                    //                 rowData: [...r.rowData, response.data]
-                                                                                    //             }
-                                                                                    //             : r
-                                                                                    //     )
-                                                                                    // )
+                                                </th>
+                                            )}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="">
+                                        {rows.map((row) => (
+                                            <tr key={row.id} className="bg-white border-b dark:bg-zinc-900 dark:border-zinc-700 border-zinc-200 relative">
+                                                {cols.map((col) => {
+                                                    const rowDataItems = row.rowData.filter(rd => rd.colId === col.id)
+                                                    return (
+                                                        <td key={`${row.id}-${col.id}`} className="px-6 py-4 border-r border-zinc-700 group align-top">
+                                                            <div className="flex flex-col gap-1 relative">
+                                                                {rowDataItems.map((rowData, index) => (
+                                                                    <div key={`${rowData.id}-${index}`} className="flex items-center gap-2">
+                                                                        <input
+                                                                            type="text"
+                                                                            className="border-none outline-none bg-transparent text-zinc-300"
+                                                                            value={rowData.content ?? ''}
+                                                                            placeholder="type row data here..."
+                                                                            disabled={!(editableNote && editable)}
+                                                                            onChange={(e) => {
+                                                                                handleRowDataChange(row.id, col.id, e.target.value, rowData.id)
+                                                                            }}
+                                                                        />
+                                                                        {(editableNote && editable) && rowDataItems.length > 1 && (
+                                                                            <button
+                                                                                className="text-red-500 hover:text-red-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                                                onClick={() => handleDeleteRowData(row.id, rowData.id)}
+                                                                                title="Delete Row Data"
+                                                                            >
+                                                                                ×
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                                {(editableNote && editable) && rowDataItems.length === 0 && (
+                                                                    <div className="flex items-center gap-2">
+                                                                        <input
+                                                                            type="text"
+                                                                            className="border-none outline-none bg-transparent text-zinc-300"
+                                                                            placeholder="type row data here..."
+                                                                            disabled={!(editableNote && editable)}
+                                                                            title="Add Row Data"
+                                                                            onChange={(e) => {
+                                                                                const value = e.target.value
+                                                                                if (contentSaveTimeout) {
+                                                                                    clearTimeout(contentSaveTimeout)
                                                                                 }
-                                                                            }, 1000)
-                                                                            setContentSaveTimeout(timeout)
-                                                                        }}
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                            {editable && rowDataItems.length > 0 && rowDataItems[0].content !== '' && (
-                                                                <button
-                                                                    className="text-blue-500 hover:text-blue-600 cursor-pointer text-left absolute -bottom-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                    onClick={() => handleAddRowData(row.id, col.id)}
-                                                                    title="Add Row Data"
-                                                                >
-                                                                    +
-                                                                </button>
-                                                            )}
-                                                        </div>
+                                                                                const timeout = setTimeout(async () => {
+                                                                                    if (value.trim() !== '') {
+                                                                                        const response = await axiosInstance.post(`/table/${tableId}/row-data`, {
+                                                                                            rowId: row.id,
+                                                                                            colId: col.id,
+                                                                                            content: value
+                                                                                        })
+                                                                                        // setRows(prevRows =>
+                                                                                        //     prevRows.map(r =>
+                                                                                        //         r.id === row.id
+                                                                                        //             ? {
+                                                                                        //                 ...r,
+                                                                                        //                 rowData: [...r.rowData, response.data]
+                                                                                        //             }
+                                                                                        //             : r
+                                                                                        //     )
+                                                                                        // )
+                                                                                    }
+                                                                                }, 1000)
+                                                                                setContentSaveTimeout(timeout)
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                {(editableNote && editable) && rowDataItems.length > 0 && rowDataItems[0].content !== '' && (
+                                                                    <button
+                                                                        className="text-blue-500 hover:text-blue-600 cursor-pointer text-left absolute -bottom-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                        onClick={() => handleAddRowData(row.id, col.id)}
+                                                                        title="Add Row Data"
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    )
+                                                })}
+                                                {(editableNote && editable) && (
+                                                    <td key={`${row.id}-delete`} className="px-6 py-2 group">
+                                                        <button
+                                                            className="text-red-500 hover:text-red-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer right-4"
+                                                            onClick={() => handleRemoveRow(row.id)}
+                                                            title="Delete Row"
+                                                        >
+                                                            ×
+                                                        </button>
                                                     </td>
-                                                )
-                                            })}
-                                            {editable && (
-                                                <td key={`${row.id}-delete`} className="px-6 py-2 group">
-                                                    <button
-                                                        className="text-red-500 hover:text-red-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer right-4"
-                                                        onClick={() => handleRemoveRow(row.id)}
-                                                        title="Delete Row"
+                                                )}
+                                            </tr>
+                                        ))}
+                                        <tr key="add-row">
+                                            {(editableNote && editable) && (
+                                                <td colSpan={cols.length + 1} className="px-6 py-2">
+                                                    <button className="text-xs text-blue-500 hover:text-blue-600 cursor-pointer"
+                                                        onClick={handleAddRow}
+                                                        title="Add Row"
                                                     >
-                                                        ×
+                                                        + Add Row
                                                     </button>
                                                 </td>
                                             )}
                                         </tr>
-                                    ))}
-                                    <tr key="add-row">
-                                        {editable && (
-                                            <td colSpan={cols.length + 1} className="px-6 py-2">
-                                                <button className="text-xs text-blue-500 hover:text-blue-600 cursor-pointer"
-                                                    onClick={handleAddRow}
-                                                    title="Add Row"
-                                                >
-                                                    + Add Row
-                                                </button>
-                                            </td>
-                                        )}
-                                    </tr>
-                                </tbody>
-                            </table>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
-
+                </>
 
             )}
         </>

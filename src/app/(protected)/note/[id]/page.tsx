@@ -13,7 +13,7 @@ import { io } from 'socket.io-client'
 import { getUserPayload } from '@/utils/auth'
 import { connectSocket, disconnectSocket, getSocket } from '@/utils/socketClient'
 import { FaRegArrowAltCircleDown, FaRegArrowAltCircleUp } from 'react-icons/fa'
-import { FaRegBookmark, FaBookmark } from 'react-icons/fa6'
+import { FaRegBookmark, FaBookmark, FaRegClipboard } from 'react-icons/fa6'
 import { TbCirclesRelation } from "react-icons/tb";
 import Modal from '@/components/Modal'
 import { useModal } from '@/hooks/useModal'
@@ -49,20 +49,28 @@ const NotePage = () => {
     const [isRelationModalOpen, setIsRelationModalOpen] = useState(false)
     const [shouldRenderRelation, setShouldRenderRelation] = useState(false)
     const [showRelationModal, setShowRelationModal] = useState(false)
-    const [relationType, setRelationType] = useState<'table' | 'document' | 'gallery'>('table')
+    const [relationType, setRelationType] = useState<'table' | 'document' | 'board'>('table')
     const [relationFilter, setRelationFilter] = useState<'my' | 'shared' | 'favorite'>('my')
     const [relationComponents, setRelationComponents] = useState<any[]>([])
     const relationModalRef = useRef<HTMLDivElement>(null)
     const { isOpen: isTagModalOpen, openModal: openTagModal, closeModal: closeTagModal } = useModal()
     const [tag, setTag] = useState('')
     const [editTag, setEditTag] = useState('')
-
+    const [beginDate, setBeginDate] = useState('')
+    const [beginDateTimeout, setBeginDateTimeout] = useState<NodeJS.Timeout>()
+    const [dueDate, setDueDate] = useState('')
+    const [dueDateTimeout, setDueDateTimeout] = useState<NodeJS.Timeout>()
+    const [dateStatus, setDateStatus] = useState('')
+    
     // fetch note
     const fetchNote = useCallback(async () => {
         try {
             const response = await axiosInstance.get(`/note/${id}`)
             setEditable(response.data.canEdit)
             setTag(response.data.tags)
+            setBeginDate(response.data.begin)
+            setDueDate(response.data.due)
+            setDateStatus(response.data.dateStatus)
             setTitle(response.data.title)
             setBlocks(response.data.noteBlocks)
             setNoteBookmark(response.data.favorite)
@@ -70,6 +78,73 @@ const NotePage = () => {
             console.error('Error fetching note:', error)
         }
     }, [id])
+
+    const handleBeginChange = async (date: string) => {
+        setBeginDate(date)
+
+        if (beginDateTimeout) {
+            clearTimeout(beginDateTimeout)
+        }
+
+        const timeout = setTimeout(async () => {
+            try {
+                await axiosInstance.put(`/note/${id}/begin`, {
+                    date: date
+                })
+            } catch (error) {
+                console.error('Error saving begin date:', error)
+            }
+            fetchNote()
+        }, 1000)
+
+        setBeginDateTimeout(timeout)
+    }
+
+    useEffect(() => {
+        return () => {
+            if (beginDateTimeout) {
+                clearTimeout(beginDateTimeout)
+            }
+        }
+    }, [beginDateTimeout])
+
+    const handleDueChange = async (date: string) => {
+        setDueDate(date)
+
+        if (dueDateTimeout) {
+            clearTimeout(dueDateTimeout)
+        }
+
+        const timeout = setTimeout(async () => {
+            try {
+                await axiosInstance.put(`/note/${id}/due`, {
+                    date: date
+                })
+            } catch (error) {
+                console.error('Error saving due date:', error)
+            }
+            fetchNote()
+        }, 1000)
+
+        setDueDateTimeout(timeout)
+    }
+
+    useEffect(() => {
+        return () => {
+            if (dueDateTimeout) {
+                clearTimeout(dueDateTimeout)
+            }
+        }
+    }, [dueDateTimeout])
+
+    const handleDueConfirm = async () => {
+        try {
+            await axiosInstance.post(`/note/${id}/confirm-due`)
+            fetchNote()
+        } catch (error) {
+            console.error('Error confirming due date:', error)
+        }
+    }
 
     // // debug
     // useEffect(() => {
@@ -116,7 +191,8 @@ const NotePage = () => {
             if (data.title) {
                 setTitle(data.title);
             }
-            if (data.canEdit !== null) {
+            if (data.canEdit) {
+                console.log('debug: can edit to event: ', data.canEdit)
                 setEditable(data.canEdit);
                 window.dispatchEvent(new CustomEvent('canEdit', {
                     detail: {
@@ -219,6 +295,17 @@ const NotePage = () => {
             })
         } catch (error) {
             console.error('Error adding document:', error)
+        }
+    }
+
+    const handleAddBoard = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault()
+        try {
+            const response = await axiosInstance.post(`/board`, {
+                noteId: id
+            })
+        } catch (error) {
+            console.error('Error adding board:', error)
         }
     }
 
@@ -392,6 +479,14 @@ const NotePage = () => {
                         type: 'error'
                     }
                 }));
+            }
+            if (error.response.data.serverCode === 'NOTE_NOT_PUBLIC') {
+                window.dispatchEvent(new CustomEvent('showNotification', {
+                    detail: {
+                        message: 'Note from this component must be public',
+                        type: 'error'
+                    }
+                }));
             } else {
                 console.error('Error adding relation:', error)
             }
@@ -400,7 +495,7 @@ const NotePage = () => {
         }
     }
 
-    const handleEditTag  = () => {
+    const handleEditTag = () => {
         setEditTag(tag)
         openTagModal()
     }
@@ -422,6 +517,8 @@ const NotePage = () => {
 
     return (
         <div className="document-page max-w-[1000px] mx-auto px-4 mb-30">
+            {/* debug */}
+            {/* {editable ? 'editable' : 'not editable'} */}
             <Modal
                 isOpen={isTagModalOpen}
                 onClose={closeTagModal}
@@ -549,10 +646,11 @@ const NotePage = () => {
                             <CiViewTable size={16} />
                         </button>
                         <button
+                            onClick={handleAddBoard}
                             className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
-                            title="Gallery"
+                            title="Board"
                         >
-                            <IoMdImages size={16} />
+                            <FaRegClipboard size={16} />
                         </button>
                     </div>
                     <div className="w-[1px] my-1 bg-zinc-500" />
@@ -567,16 +665,55 @@ const NotePage = () => {
                     </div>
                 </div>
                 <div className="flex gap-2">
+                    <div className="flex gap-2">
                     <label
-                        className={`status-label py-1 px-2 rounded-md text-white cursor-pointer ${
-                            tag === 'progress' ? 'bg-sky-700 hover:bg-sky-500' :
-                            tag === 'complete' ? 'bg-emerald-700 hover:bg-emerald-500' :
-                            'bg-zinc-700 hover:bg-zinc-500'
-                        }`}
+                        className={`status-label py-1 px-2 rounded-md text-white cursor-pointer ${dateStatus === 'progress' ? 'bg-sky-700 hover:bg-sky-500' :
+                            dateStatus === 'complete' ? 'bg-emerald-700 hover:bg-emerald-500' : dateStatus === 'confirm to complete' ? 'bg-yellow-700 hover:bg-yellow-500' :
+                                    'bg-zinc-700 hover:bg-zinc-500'
+                            }`}
+                            onClick={e => {
+                                if (dateStatus === 'confirm to complete') {
+                                    handleDueConfirm()
+                                }
+                            }}
+                    >
+                        {dateStatus}
+                    </label>
+                        <div className="relative text-start">
+                            <p className="text-xs text-zinc-400 absolute bottom-0">Begin</p>
+
+                            <input 
+                                type="date"
+                                value={beginDate ?? ''}
+                                onChange={(e) => {
+                                    handleBeginChange(e.target.value)
+                                }}
+                                className="w-32 h-5 rounded-md bg-zinc-700 text-white px-2 py-1 border border-zinc-600 focus:outline-none focus:border-zinc-500"
+                                placeholder="Begin"
+                            />
+                        </div>
+                        <div className="relative text-start">
+                            <p className="text-xs text-zinc-400 absolute bottom-0">Due</p>
+                            <input 
+                                type="date"
+                                value={dueDate ?? ''}
+                                onChange={(e) => {
+                                    handleDueChange(e.target.value)
+                                }}
+                                className="w-32 h-5 rounded-md bg-zinc-700 text-white px-2 py-1 border border-zinc-600 focus:outline-none focus:border-zinc-500" 
+                                placeholder="Due"
+                            />
+                        </div>
+                    </div>
+                    {/* <label
+                        className={`status-label py-1 px-2 rounded-md text-white cursor-pointer ${tag === 'progress' ? 'bg-sky-700 hover:bg-sky-500' :
+                                tag === 'complete' ? 'bg-emerald-700 hover:bg-emerald-500' :
+                                    'bg-zinc-700 hover:bg-zinc-500'
+                            }`}
                         onClick={handleEditTag}
                     >
                         {tag || '....'}
-                    </label>
+                    </label> */}
                     <button
                         className={`p-2 rounded-md text-white hover:bg-zinc-500 cursor-pointer bg-zinc-700`}
                         title="Save to Bookmark"
@@ -687,7 +824,7 @@ const NotePage = () => {
                                                     name="type"
                                                     value="table"
                                                     checked={relationType === 'table'}
-                                                    onChange={(e) => setRelationType(e.target.value as 'table' | 'document' | 'gallery')}
+                                                    onChange={(e) => setRelationType(e.target.value as 'table' | 'document' | 'board')}
                                                     className="absolute opacity-0 right-0 w-full h-full cursor-pointer"
                                                 />
                                                 Table
@@ -704,7 +841,7 @@ const NotePage = () => {
                                                     name="type"
                                                     value="document"
                                                     checked={relationType === 'document'}
-                                                    onChange={(e) => setRelationType(e.target.value as 'table' | 'document' | 'gallery')}
+                                                    onChange={(e) => setRelationType(e.target.value as 'table' | 'document' | 'board')}
                                                     className="absolute opacity-0 left-0 w-full h-full cursor-pointer"
                                                 />
                                                 Document
@@ -712,19 +849,19 @@ const NotePage = () => {
                                         </div>
                                         <div className="relative w-full text-center">
                                             <label
-                                                htmlFor="gallery"
-                                                className={`cursor-pointer block px-4 py-2 text-sm rounded-e-lg transition-all ${relationType === 'gallery' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'}`}
+                                                htmlFor="           "
+                                                className={`cursor-pointer block px-4 py-2 text-sm rounded-e-lg transition-all ${relationType === 'board' ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'}`}
                                             >
                                                 <input
                                                     type="radio"
-                                                    id="gallery"
+                                                    id="board"
                                                     name="type"
-                                                    value="gallery"
-                                                    checked={relationType === 'gallery'}
-                                                    onChange={(e) => setRelationType(e.target.value as 'table' | 'document' | 'gallery')}
+                                                    value="board"
+                                                    checked={relationType === 'board'}
+                                                    onChange={(e) => setRelationType(e.target.value as 'table' | 'document' | 'board')}
                                                     className="absolute opacity-0 left-0 w-full h-full cursor-pointer"
                                                 />
-                                                Gallery
+                                                Board
                                             </label>
                                         </div>
                                     </div>
@@ -848,7 +985,7 @@ const NotePage = () => {
                             />
                         )
                     })}
-                    <BoardNoteComponent />
+                    {/* <BoardNoteComponent /> */}
                 </div>
             </div>
         </div>

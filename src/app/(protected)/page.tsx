@@ -253,14 +253,38 @@ export default function Home() {
                         <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-2 line-clamp-2 sm:line-clamp-3">{note.content}</p>
                         <div className="mt-2 flex items-center justify-between text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
                             <span>Last modified: {note.updatedAt ? formatDate(note.updatedAt) : ''}</span>
-                            <div className='space-x-2'>
+                            {/* <div className='space-x-2'>
                                 <span className={`px-2 py-0.5  ${
                             note.tags === 'progress' ? 'bg-sky-700' :
                             note.tags === 'complete' ? 'bg-emerald-700' :
                             'bg-zinc-700'
                         } rounded-full text-zinc-300`}>{note.tags}</span>
                                 <span className="px-2 py-0.5 bg-zinc-700 rounded-full text-zinc-300">{note.status}</span>
+                            </div> */}
+                            <div className="flex gap-2">
+                                {note.due && note.dateStatus !== 'complete' && (
+                                    <span className={`px-2 py-0.5 rounded-md text-white ${
+                                        note.dateStatus === 'confirm to complete' && new Date(note.due) < new Date() ? 'bg-red-700' :
+                                        Math.floor((new Date(note.due).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 3 ? 'bg-yellow-700' :
+                                        'bg-zinc-700'
+                                    }`}>
+                                        {note.dateStatus === 'confirm to complete' && new Date(note.due) < new Date() 
+                                            ? `Overdue ${Math.abs(Math.floor((new Date(note.due).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} days` :
+                                         Math.floor((new Date(note.due).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) === 0 ? 'Due today' :
+                                         Math.floor((new Date(note.due).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) === 1 ? 'Due tomorrow' :
+                                         `Due in ${Math.floor((new Date(note.due).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days`}
+                                    </span>
+                                )}
                             </div>
+
+<label
+                        className={`status-label px-2 py-0.5 rounded-md text-white cursor-pointer ${note.dateStatus === 'progress' ? 'bg-sky-700 hover:bg-sky-500' :
+                            note.dateStatus === 'complete' ? 'bg-emerald-700 hover:bg-emerald-500' : note.dateStatus === 'confirm to complete' ? 'bg-yellow-700 hover:bg-yellow-500' :
+                                    'bg-zinc-700 hover:bg-zinc-500'
+                            }`}
+                    >
+                        {note.dateStatus}
+                    </label>
                         </div>
                     </div>
                 ))}
