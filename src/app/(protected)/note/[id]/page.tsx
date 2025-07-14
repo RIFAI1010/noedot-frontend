@@ -240,6 +240,9 @@ const NotePage = () => {
         }
     }
 
+
+    
+
     useEffect(() => {
         if (isPositionModalOpen) {
             setShouldRender(true)
