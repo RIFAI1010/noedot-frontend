@@ -60,7 +60,7 @@ export default function GoogleLoginButton({onSuccess, login, setIsLoading}: Goog
                 if (callbackUrl && !ignoreCallbackUrl.includes(callbackUrl)) {
                     router.push(callbackUrl);
                 } else {
-                    router.push('/dashboard');
+                    router.push('/');
                 }
             }
         });

@@ -47,7 +47,7 @@ export default function LoginPage() {
             if (callbackUrl && !ignoreCallbackUrl.includes(callbackUrl)) {
                 router.push(callbackUrl);
             } else {
-                router.push('/dashboard');
+                router.push('/');
             }
         } catch (err: unknown) {
             const error = err as ApiError;
@@ -188,7 +188,7 @@ export default function LoginPage() {
             <p className="mt-4 text-center text-sm text-white">
                 Don&apos;t have an account?{" "}
                 <Link href="/register" className="text-zinc-500 hover:underline" title="Sign Up">
-                    Sing Up
+                    Sign Up
                 </Link>
             </p>
         </div>

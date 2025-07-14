@@ -82,7 +82,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     return (
         <ProtectedLayout>
-            <div className="min-h-screen bg-background">
+            <div className="min-h-screen bg-zinc-950">
                 {/* Sidebar */}
                 <Navbar sidebarOpen={sidebarOpen} onMenuClick={() => {
                     // if (!closeByOutside) {

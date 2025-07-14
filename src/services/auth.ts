@@ -31,6 +31,8 @@ export const authService = {
         try {
             await axiosInstance.post('/auth/logout');
             localStorage.removeItem('accessToken');
+            localStorage.removeItem('name');
+            localStorage.removeItem('avatar');
         } catch (error) {
             // console.log('error', error)
         }
